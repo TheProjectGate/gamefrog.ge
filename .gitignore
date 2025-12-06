@@ -14,7 +14,7 @@ dist-ssr
 android
 bacup
 setup.sql
-docs
+docs/
 # Environment variables
 
 # Backend port file (auto-generated)
