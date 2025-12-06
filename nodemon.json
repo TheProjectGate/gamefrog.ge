@@ -1,0 +1,14 @@
+{
+  "watch": ["server", ".env" ],
+  "ext": "ts,json",
+  "ignore": ["node_modules", "dist", "src", "*.test.ts", "*.spec.ts"],
+  "exec": "tsx server/server.ts",
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "delay": 2000,
+  "signal": "SIGTERM",
+  "killTimeout": 5000,
+  "restartable": "rs"
+}
+

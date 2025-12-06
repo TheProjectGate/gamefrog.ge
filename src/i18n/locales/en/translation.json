@@ -1,0 +1,180 @@
+{
+  "common": {
+    "search": "Search",
+    "close": "Close",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "saleModal": {
+    "banner": "Limited Time Offer",
+    "badge": "Pop Art Mega Sale",
+    "headlinePrefix": "Up to",
+    "headlineHighlight": "{{discount}}% OFF",
+    "headlineSuffix": "on Retro & Next-Gen Hits!",
+    "description": "Grab the hottest titles, consoles, and exclusive merch before the timer hits zero.",
+    "countdown": {
+      "days": "Days",
+      "hours": "Hours",
+      "minutes": "Minutes",
+      "seconds": "Seconds"
+    },
+    "ctaHint": "Don't miss out!",
+    "ctaButton": "Go To Sale",
+    "closeAria": "Close sale announcement"
+  },
+  "header": {
+    "title": "Pixel Palace",
+    "browse": "Browse",
+    "sale": "Sale",
+    "cart": "Cart",
+    "wishlist": "Wishlist",
+    "userCabinet": "User Cabinet",
+    "loginRegister": "Login / Register",
+    "searchPlaceholder": "Search games & consoles...",
+    "openSearch": "Open search",
+    "closeSearch": "Close search",
+    "toggleBrowse": "Toggle browse view",
+    "viewSale": "View sale",
+    "openUserCabinet": "Open user cabinet",
+    "openRegistration": "Open registration or sign in form",
+    "viewWishlist": "View wishlist with {{count}} items",
+    "viewCart": "View cart with {{count}} items",
+    "openMenu": "Open menu"
+  },
+  "footer": {
+    "description": "Your one-stop shop for the latest video games and next-gen consoles, all with a vibrant pop-art flair.",
+    "navigate": "Navigate",
+    "home": "Home",
+    "browse": "Browse",
+    "cart": "Cart",
+    "wishlist": "Wishlist",
+    "platforms": "Platforms",
+    "copyright": "© {{year}} Pixel Palace. All Rights Reserved.",
+    "goToTop": "Go to top"
+  },
+  "home": {
+    "title": "Level Up Your Library",
+    "subtitle": "The hottest new games and next-gen consoles.",
+    "all": "All",
+    "coinsExclusive": "Coins Exclusive",
+    "bundleDeals": "Bundle Deals",
+    "newReleases": "New Releases",
+    "bestSellers": "Best Sellers",
+    "retroCorner": "Retro Corner",
+    "newMerch": "New Merch",
+    "noProductsFound": "No products found",
+    "tryAdjustingSearch": "Try adjusting your search terms."
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "emptyDescription": "Add some games to get started!",
+    "total": "Total",
+    "checkout": "Checkout",
+    "remove": "Remove",
+    "continueShopping": "Continue Shopping"
+  },
+  "wishlist": {
+    "title": "Wishlist",
+    "empty": "Your wishlist is empty",
+    "emptyDescription": "Start adding games you want to buy later!"
+  },
+  "sale": {
+    "title": "Sale",
+    "empty": "No sale items available"
+  },
+  "browse": {
+    "title": "Browse Games",
+    "filters": "Filters",
+    "clearFilters": "Clear Filters",
+    "sortBy": "Sort By",
+    "price": "Price",
+    "condition": "Condition",
+    "all": "All",
+    "new": "New",
+    "used": "Used",
+    "onSale": "On Sale",
+    "onlyCoins": "Coins Only",
+    "bundlesOnly": "Bundles Only"
+  },
+  "product": {
+    "addToCart": "Add to Cart",
+    "addToWishlist": "Add to Wishlist",
+    "removeFromWishlist": "Remove from Wishlist",
+    "description": "Description",
+    "platforms": "Platforms",
+    "genres": "Genres",
+    "tags": "Tags",
+    "price": "Price",
+    "discount": "Discount",
+    "originalPrice": "Original Price",
+    "coinPrice": "Coin Price",
+    "bundleItems": "Bundle Items",
+    "inStock": "In Stock",
+    "outOfStock": "Out of Stock"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?",
+    "loginPrompt": "Please log in to view your wishlist!",
+    "accessDenied": "Access Denied: Admins only."
+  },
+  "chat": {
+    "greeting": "Hello!",
+    "placeholder": "Type your message...",
+    "send": "Send",
+    "close": "Close chat",
+    "notUnderstood": "I didn't understand. Try rephrasing.",
+    "online": "is online",
+    "hideChat": "Hide chat",
+    "askAboutSales": "Ask about sales or games",
+    "collapseChat": "Collapse chat",
+    "openChat": "Open chat",
+    "kratos": {
+      "greeting": "You survived that Limited Time Offer? Hope you grabbed discounts, not just stress. What are we smashing next?",
+      "responses": {
+        "hello": "Hey there! Axe is warmed up. What do you need on GameFrog?",
+        "sale": "Sales are on fire until midnight! Tap the Sale button up top.",
+        "platform": "Tell me a genre or platform and I'll curate something from the catalog.",
+        "bundle": "Say \"bundle\" and I'll highlight the bundle of the week.",
+        "admin": "Want the admin panel? Tap my head and then hit \"Admin\" in the header.",
+        "followups": {
+          "ideas": "Noted. Want me to assemble a set of games for your style?",
+          "sale": "Head to the Sale section—discounts are stacked right now.",
+          "bundle": "Need bundles? Say \"bundle\" and I'll highlight the weekly picks.",
+          "wishlist": "Your wishlist is waiting for new trophies. Don't stall."
+        }
+      }
+    }
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "dashboard": "Dashboard",
+    "products": "Products",
+    "messages": "Messages",
+    "labels": "Labels",
+    "wishlistAnalytics": "Wishlist Analytics"
+  },
+  "toast": {
+    "addedToCart": "Added to cart",
+    "removedFromCart": "Removed from cart",
+    "addedToWishlist": "Added to wishlist",
+    "removedFromWishlist": "Removed from wishlist",
+    "loginSuccess": "Login successful",
+    "registerSuccess": "Registration successful",
+    "logoutSuccess": "Logged out successfully"
+  }
+}
+

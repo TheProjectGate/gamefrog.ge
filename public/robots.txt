@@ -1,0 +1,16 @@
+# robots.txt for gamefrog.ge
+
+User-agent: *
+Allow: /
+Allow: /products
+Allow: /wishlist
+Allow: /cart
+
+# Disallow admin and user-specific pages
+Disallow: /admin
+Disallow: /checkout
+Disallow: /user-cabinet
+
+# Sitemap
+Sitemap: https://gamefrog.ge/sitemap.xml
+
