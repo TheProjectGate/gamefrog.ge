@@ -84,45 +84,6 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-// PUT /api/filter-groups/:groupId - Update filter group
-router.put('/:groupId', async (req: Request, res: Response) => {
-  try {
-    const { groupId } = req.params;
-    const { label, items, displayOrder } = req.body;
-    
-    const updates: string[] = [];
-    const values: any[] = [];
-    
-    if (label !== undefined) {
-      updates.push('label = ?');
-      values.push(label);
-    }
-    if (items !== undefined) {
-      updates.push('items_json = ?');
-      values.push(JSON.stringify(items));
-    }
-    if (displayOrder !== undefined) {
-      updates.push('display_order = ?');
-      values.push(displayOrder);
-    }
-    
-    if (updates.length === 0) {
-      return res.status(400).json({ error: 'No fields to update' });
-    }
-    
-    values.push(groupId);
-    await pool.execute(
-      `UPDATE filter_groups SET ${updates.join(', ')} WHERE group_id = ?`,
-      values
-    );
-    
-    res.json({ message: 'Filter group updated successfully' });
-  } catch (error: any) {
-    console.error('Error updating filter group:', error);
-    res.status(500).json({ error: 'Failed to update filter group', message: error.message });
-  }
-});
-
 // GET /api/filter-groups/config/assignments - Get filter assignments
 router.get('/config/assignments', async (req: Request, res: Response) => {
   try {
@@ -216,6 +177,147 @@ router.put('/config/order', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error updating filter group order:', error);
     res.status(500).json({ error: 'Failed to update filter group order', message: error.message });
+  }
+});
+
+// PUT /api/filter-groups/items/order - Update filter items order within a group
+// Using query parameter to avoid route conflicts
+router.put('/items/order', async (req: Request, res: Response) => {
+  try {
+    const { groupId, itemOrder, parentId } = req.body;
+    
+    if (!groupId) {
+      return res.status(400).json({ error: 'groupId is required' });
+    }
+    
+    console.log('[filterGroups] Reorder request received:', { 
+      groupId, 
+      itemOrder, 
+      parentId,
+      url: req.url,
+      path: req.path,
+      originalUrl: req.originalUrl
+    });
+    
+    if (!Array.isArray(itemOrder)) {
+      return res.status(400).json({ error: 'itemOrder array is required' });
+    }
+    
+    // Get current group
+    const [rows] = await pool.execute(
+      `SELECT items_json as itemsJson FROM filter_groups WHERE group_id = ?`,
+      [groupId]
+    );
+    
+    const groups = rows as any[];
+    if (groups.length === 0) {
+      return res.status(404).json({ error: 'Filter group not found' });
+    }
+    
+    const currentItems = JSON.parse(groups[0].itemsJson);
+    
+    if (parentId) {
+      // Reorder sub-filters (children)
+      const parent = currentItems[parentId];
+      if (!parent) {
+        return res.status(404).json({ error: 'Parent filter not found' });
+      }
+      
+      const children = parent.children || {};
+      const reorderedChildren: any = {};
+      
+      // Reorder children according to itemOrder
+      itemOrder.forEach((childName: string) => {
+        if (children[childName]) {
+          reorderedChildren[childName] = children[childName];
+        }
+      });
+      
+      // Add any remaining children that weren't in the order array
+      Object.keys(children).forEach(childName => {
+        if (!reorderedChildren[childName]) {
+          reorderedChildren[childName] = children[childName];
+        }
+      });
+      
+      currentItems[parentId] = {
+        ...parent,
+        children: reorderedChildren
+      };
+    } else {
+      // Reorder main filters
+      const reorderedItems: any = {};
+      
+      // Reorder items according to itemOrder
+      itemOrder.forEach((itemName: string) => {
+        if (currentItems[itemName]) {
+          reorderedItems[itemName] = currentItems[itemName];
+        }
+      });
+      
+      // Add any remaining items that weren't in the order array
+      Object.keys(currentItems).forEach(itemName => {
+        if (!reorderedItems[itemName]) {
+          reorderedItems[itemName] = currentItems[itemName];
+        }
+      });
+      
+      // Replace currentItems with reorderedItems
+      Object.keys(currentItems).forEach(key => delete currentItems[key]);
+      Object.keys(reorderedItems).forEach(key => {
+        currentItems[key] = reorderedItems[key];
+      });
+    }
+    
+    // Update group in database
+    await pool.execute(
+      `UPDATE filter_groups SET items_json = ? WHERE group_id = ?`,
+      [JSON.stringify(currentItems), groupId]
+    );
+    
+    res.json({ message: 'Filter items order updated successfully' });
+  } catch (error: any) {
+    console.error('Error updating filter items order:', error);
+    res.status(500).json({ error: 'Failed to update filter items order', message: error.message });
+  }
+});
+
+// PUT /api/filter-groups/:groupId - Update filter group
+router.put('/:groupId', async (req: Request, res: Response) => {
+  try {
+    const { groupId } = req.params;
+    const { label, items, displayOrder } = req.body;
+    
+    const updates: string[] = [];
+    const values: any[] = [];
+    
+    if (label !== undefined) {
+      updates.push('label = ?');
+      values.push(label);
+    }
+    if (items !== undefined) {
+      updates.push('items_json = ?');
+      values.push(JSON.stringify(items));
+    }
+    if (displayOrder !== undefined) {
+      updates.push('display_order = ?');
+      values.push(displayOrder);
+    }
+    
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+    
+    values.push(groupId);
+    await pool.execute(
+      `UPDATE filter_groups SET ${updates.join(', ')} WHERE group_id = ?`,
+      values
+    );
+    
+    res.json({ message: 'Filter group updated successfully' });
+  } catch (error: any) {
+    console.error('Error updating filter group:', error);
+    res.status(500).json({ error: 'Failed to update filter group', message: error.message });
   }
 });
 

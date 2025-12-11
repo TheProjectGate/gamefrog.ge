@@ -33,6 +33,7 @@ import {
   fetchFilterAssignments,
   updateFilterAssignments,
   updateFilterGroupOrder,
+  updateFilterItemsOrder,
   saveFilterConfig,
   loadFilterConfig,
 } from '../api/filterGroups';
@@ -269,6 +270,8 @@ interface StoreActions {
   assignFilterGroup: (assignment: 'genre' | 'platform', groupId: string) => Promise<void>;
   saveFilterItem: (groupId: string, oldName: string, newName: string, item: FilterConfigItem, parentId?: string) => Promise<void>;
   deleteFilterItem: (groupId: string, name: string, parentId?: string) => Promise<void>;
+  reorderFilterItems: (groupId: string, itemOrder: string[], parentId?: string) => Promise<void>;
+  reorderFilterGroups: (newOrder: string[]) => Promise<void>;
   
   // Language
   setLanguage: (language: SupportedLanguage) => void;
@@ -2622,6 +2625,127 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
       // Rollback on error
       set(state);
       get().setToast(`Failed to delete filter item: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+  reorderFilterItems: async (groupId, itemOrder, parentId) => {
+    const state = get();
+    const group = state.filterGroups[groupId];
+    if (!group) {
+      get().setToast(`Filter group "${groupId}" not found`);
+      return;
+    }
+    
+    let updatedGroup = group;
+    
+    if (parentId) {
+      // Reorder sub-filters (children)
+      const parent = group.items[parentId];
+      if (!parent) {
+        get().setToast(`Parent filter "${parentId}" not found`);
+        return;
+      }
+      
+      const children = parent.children || {};
+      const reorderedChildren: FilterConfig = {};
+      
+      // Reorder children according to itemOrder
+      itemOrder.forEach((childName: string) => {
+        if (children[childName]) {
+          reorderedChildren[childName] = children[childName];
+        }
+      });
+      
+      // Add any remaining children that weren't in the order array
+      Object.keys(children).forEach(childName => {
+        if (!reorderedChildren[childName]) {
+          reorderedChildren[childName] = children[childName];
+        }
+      });
+      
+      updatedGroup = {
+        ...group,
+        items: {
+          ...group.items,
+          [parentId]: {
+            ...parent,
+            children: reorderedChildren,
+          },
+        },
+      };
+    } else {
+      // Reorder main filters
+      // Create a new object with keys in the specified order
+      const reorderedItems: FilterConfig = {} as FilterConfig;
+      
+      // Reorder items according to itemOrder
+      itemOrder.forEach((itemName: string) => {
+        if (group.items[itemName]) {
+          reorderedItems[itemName] = group.items[itemName];
+        }
+      });
+      
+      // Add any remaining items that weren't in the order array
+      Object.keys(group.items).forEach(itemName => {
+        if (!reorderedItems[itemName]) {
+          reorderedItems[itemName] = group.items[itemName];
+        }
+      });
+      
+      updatedGroup = {
+        ...group,
+        items: reorderedItems,
+      };
+    }
+    
+    // Optimistic update
+    set({
+      filterGroups: {
+        ...state.filterGroups,
+        [groupId]: updatedGroup,
+      },
+    });
+    
+    // Save to API
+    try {
+      await updateFilterItemsOrder(groupId, itemOrder, parentId);
+    } catch (error) {
+      console.error('Failed to reorder filter items:', error);
+      // Rollback on error
+      set(state);
+      get().setToast('Failed to reorder filter items. Please try again.');
+    }
+  },
+  reorderFilterGroups: async (newOrder) => {
+    const state = get();
+    
+    // Validate that all groups exist
+    const missingGroups = newOrder.filter(id => !state.filterGroups[id]);
+    if (missingGroups.length > 0) {
+      get().setToast(`Some filter groups not found: ${missingGroups.join(', ')}`);
+      return;
+    }
+    
+    // Validate that all existing groups are included
+    const existingGroups = Object.keys(state.filterGroups);
+    const missingInOrder = existingGroups.filter(id => !newOrder.includes(id));
+    if (missingInOrder.length > 0) {
+      // Add missing groups to the end
+      newOrder = [...newOrder, ...missingInOrder];
+    }
+    
+    // Optimistic update
+    set({
+      filterGroupOrder: newOrder,
+    });
+    
+    // Save to API
+    try {
+      await updateFilterGroupOrder(newOrder);
+    } catch (error) {
+      console.error('Failed to reorder filter groups:', error);
+      // Rollback on error
+      set(state);
+      get().setToast('Failed to reorder filter groups. Please try again.');
     }
   },
 

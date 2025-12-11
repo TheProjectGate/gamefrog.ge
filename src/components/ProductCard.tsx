@@ -24,6 +24,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onToggleWishlist, is
   const [imageError, setImageError] = useState(false);
   const products = useStore(state => state.products);
   const filterAssignments = useStore(state => state.filterAssignments);
+  const filterGroups = useStore(state => state.filterGroups);
 
   const getIconNode = useCallback((iconName?: string, className?: string) => {
     if (!iconName) return null;
@@ -46,28 +47,42 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onToggleWishlist, is
   const getConfigForValue = useCallback((config: FilterConfig, value: string) => {
     if (!value) return undefined;
     
+    const trimmedValue = value.trim();
+    if (!trimmedValue) return undefined;
+    
     // Проверяем формат parent::child (суб-фильтр)
-    if (value.includes('::')) {
-      const [parentKey, childKey] = value.split('::');
-      const parentConfig = config[parentKey];
-      if (parentConfig?.children && parentConfig.children[childKey]) {
-        return parentConfig.children[childKey];
+    if (trimmedValue.includes('::')) {
+      const [parentKey, childKey] = trimmedValue.split('::').map(s => s.trim());
+      if (parentKey && childKey) {
+        const parentConfig = config[parentKey];
+        if (parentConfig?.children && parentConfig.children[childKey]) {
+          return parentConfig.children[childKey];
+        }
       }
     }
     
-    // Сначала проверяем прямое совпадение
-    if (config[value]) return config[value];
+    // Сначала проверяем прямое совпадение (с учетом пробелов)
+    if (config[trimmedValue]) return config[trimmedValue];
     
     // Проверяем, является ли это дочерним элементом (без разделителя)
     for (const [parentKey, parentConfig] of Object.entries(config)) {
-      if (parentConfig.children && parentConfig.children[value]) {
-        return parentConfig.children[value];
+      if (parentConfig.children) {
+        if (parentConfig.children[trimmedValue]) {
+          return parentConfig.children[trimmedValue];
+        }
+        // Также проверяем без учета регистра и пробелов
+        for (const [childKey, childConfig] of Object.entries(parentConfig.children)) {
+          const norm = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+          if (norm(childKey) === norm(trimmedValue)) {
+            return childConfig;
+          }
+        }
       }
     }
     
     // Нормализованный поиск для родительских элементов
-    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const target = norm(value);
+    const norm = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+    const target = norm(trimmedValue);
     for (const [k, v] of Object.entries(config)) {
       if (norm(k) === target) return v;
     }
@@ -259,7 +274,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onToggleWishlist, is
                 });
             })()}
             {(() => {
-                let basePlatforms = [];
+                let basePlatforms: string[] = [];
                 if (Array.isArray(product.platforms)) {
                   basePlatforms = product.platforms;
                 } else if (typeof product.platforms === 'string') {
@@ -267,13 +282,25 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onToggleWishlist, is
                     const parsed = JSON.parse(product.platforms);
                     if (Array.isArray(parsed)) {
                       basePlatforms = parsed;
+                    } else if (parsed) {
+                      basePlatforms = [parsed];
                     }
-                  } catch (e) { /* ignore error */ }
+                  } catch (e) {
+                    // If JSON parsing fails, treat as a single platform string
+                    if (product.platforms.trim()) {
+                      basePlatforms = [product.platforms];
+                    }
+                  }
+                } else if (product.platforms) {
+                  basePlatforms = [String(product.platforms)];
                 }
                 const platformGroup = platformGroupId || filterAssignments.platform;
                 const extraPlatforms = platformGroup ? (product.filterValues?.[platformGroup] || []) : [];
-                const allPlatforms = [...new Set([...basePlatforms, ...extraPlatforms])];
-                return allPlatforms.map(platform => {
+                const allPlatforms = [...new Set([...basePlatforms, ...extraPlatforms])]
+                  .map(p => typeof p === 'string' ? p.trim() : String(p).trim())
+                  .filter(Boolean);
+                return allPlatforms.map((platform, index) => {
+                    if (!platform) return null;
                     const config = getConfigForValue(platformConfig, platform);
                     if (!config) return null;
                     const displayContent = config.customSvg ? (
@@ -286,7 +313,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onToggleWishlist, is
                     if (!displayContent) return null;
                     return (
                         <div 
-                            key={platform} 
+                            key={`${platform}-${index}`} 
                             title={platform} 
                             className={`${getBackgroundClassName(config.color)} ${config.textColor} w-7 h-7 flex items-center justify-center font-bold text-sm border-2 border-black`} 
                             style={getBackgroundStyle(config.color)}
@@ -297,7 +324,62 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onToggleWishlist, is
                             {displayContent}
                         </div>
                     );
+                }).filter(Boolean);
+            })()}
+            {(() => {
+                // Отображаем иконки для всех остальных групп фильтров (кроме genre и platform)
+                const genreGroup = genreGroupId || filterAssignments.genre;
+                const platformGroup = platformGroupId || filterAssignments.platform;
+                const excludedGroups = new Set([genreGroup, platformGroup].filter(Boolean));
+                
+                const otherFilterIcons: React.ReactNode[] = [];
+                
+                // Проходим по всем группам фильтров
+                Object.entries(filterGroups).forEach(([groupId, group]) => {
+                    // Пропускаем genre и platform, они уже обработаны выше
+                    if (excludedGroups.has(groupId)) return;
+                    
+                    // Получаем значения фильтров для этой группы из product.filterValues
+                    const filterValues = product.filterValues?.[groupId] || [];
+                    if (filterValues.length === 0) return;
+                    
+                    const groupConfig = group.items;
+                    
+                    // Для каждого значения фильтра создаем иконку
+                    filterValues.forEach((value, index) => {
+                        const trimmedValue = typeof value === 'string' ? value.trim() : String(value).trim();
+                        if (!trimmedValue) return;
+                        
+                        const config = getConfigForValue(groupConfig, trimmedValue);
+                        if (!config) return;
+                        
+                        const displayContent = config.customSvg ? (
+                            <div className="w-4 h-4 svg-container" dangerouslySetInnerHTML={{ __html: sanitizeSVG(config.customSvg) }} />
+                        ) : config.iconName ? (
+                            getIconNode(config.iconName, 'w-4 h-4')
+                        ) : config.symbol ? (
+                            <span className="text-xs">{config.symbol}</span>
+                        ) : null;
+                        
+                        if (!displayContent) return;
+                        
+                        otherFilterIcons.push(
+                            <div 
+                                key={`${groupId}-${trimmedValue}-${index}`} 
+                                title={`${group.label}: ${trimmedValue}`} 
+                                className={`${getBackgroundClassName(config.color)} ${config.textColor} w-7 h-7 flex items-center justify-center font-bold text-sm border-2 border-black`} 
+                                style={getBackgroundStyle(config.color)}
+                                data-platform-chip 
+                                role="img" 
+                                aria-label={`${group.label}: ${trimmedValue}`}
+                            >
+                                {displayContent}
+                            </div>
+                        );
+                    });
                 });
+                
+                return otherFilterIcons;
             })()}
         </div>
       </div>

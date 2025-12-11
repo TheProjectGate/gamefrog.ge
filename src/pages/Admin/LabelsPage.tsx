@@ -1,6 +1,7 @@
-import React, { useState, FormEvent, useEffect } from 'react';
+import React, { useState, FormEvent, useEffect, useRef } from 'react';
 import { FilterConfigItem, FilterGroup } from '../../types';
 import { PlusIcon, EditIcon, TrashIcon, CloseIcon } from '../../components/Icons';
+import { ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
 import useStore from '../../store/useStore';
 import * as LucideIcons from 'lucide-react';
 import { sanitizeSVG } from '../../utils/sanitize';
@@ -404,6 +405,8 @@ const LabelsPage: React.FC = () => {
         assignFilterGroup,
         saveFilterItem,
         deleteFilterItem,
+        reorderFilterItems,
+        reorderFilterGroups,
     } = useStore();
 
     const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
@@ -429,6 +432,14 @@ const LabelsPage: React.FC = () => {
     const [groupModalMode, setGroupModalMode] = useState<'add' | 'rename'>('add');
     const [groupModalLabel, setGroupModalLabel] = useState('');
     const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+    
+    // Drag and drop state for filter items
+    const [draggedItem, setDraggedItem] = useState<{ groupId: string; itemName: string; parentId?: string } | null>(null);
+    const [dragOverItem, setDragOverItem] = useState<{ groupId: string; itemName: string; parentId?: string } | null>(null);
+    
+    // Drag and drop state for filter groups
+    const [draggedGroup, setDraggedGroup] = useState<string | null>(null);
+    const [dragOverGroup, setDragOverGroup] = useState<string | null>(null);
 
     const handleOpenConfigModal = (
         group: FilterGroup,
@@ -459,6 +470,150 @@ const LabelsPage: React.FC = () => {
         }
     };
 
+    const handleMoveFilter = async (groupId: string, itemName: string, direction: 'up' | 'down', parentId?: string) => {
+        const group = filterGroups[groupId];
+        if (!group) return;
+        
+        let items: string[];
+        if (parentId) {
+            const parent = group.items[parentId];
+            if (!parent?.children) return;
+            items = Object.keys(parent.children);
+        } else {
+            items = Object.keys(group.items);
+        }
+        
+        const currentIndex = items.indexOf(itemName);
+        if (currentIndex === -1) return;
+        
+        const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+        if (newIndex < 0 || newIndex >= items.length) return;
+        
+        // Swap items
+        const newOrder = [...items];
+        [newOrder[currentIndex], newOrder[newIndex]] = [newOrder[newIndex], newOrder[currentIndex]];
+        
+        await reorderFilterItems(groupId, newOrder, parentId);
+    };
+
+    const handleDragStart = (e: React.DragEvent, groupId: string, itemName: string, parentId?: string) => {
+        setDraggedItem({ groupId, itemName, parentId });
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', ''); // Required for Firefox
+        if (e.currentTarget instanceof HTMLElement) {
+            e.currentTarget.style.opacity = '0.5';
+        }
+    };
+
+    const handleDragEnd = (e: React.DragEvent) => {
+        if (e.currentTarget instanceof HTMLElement) {
+            e.currentTarget.style.opacity = '1';
+        }
+        setDraggedItem(null);
+        setDragOverItem(null);
+    };
+
+    const handleDragOver = (e: React.DragEvent, groupId: string, itemName: string, parentId?: string) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        if (draggedItem && draggedItem.groupId === groupId && draggedItem.parentId === parentId && draggedItem.itemName !== itemName) {
+            setDragOverItem({ groupId, itemName, parentId });
+        }
+    };
+
+    const handleDragLeave = () => {
+        setDragOverItem(null);
+    };
+
+    const handleDrop = async (e: React.DragEvent, groupId: string, itemName: string, parentId?: string) => {
+        e.preventDefault();
+        setDragOverItem(null);
+        
+        if (!draggedItem || draggedItem.groupId !== groupId || draggedItem.parentId !== parentId || draggedItem.itemName === itemName) {
+            return;
+        }
+        
+        const group = filterGroups[groupId];
+        if (!group) return;
+        
+        let items: string[];
+        if (parentId) {
+            const parent = group.items[parentId];
+            if (!parent?.children) return;
+            items = Object.keys(parent.children);
+        } else {
+            items = Object.keys(group.items);
+        }
+        
+        const draggedIndex = items.indexOf(draggedItem.itemName);
+        const dropIndex = items.indexOf(itemName);
+        
+        if (draggedIndex === -1 || dropIndex === -1) return;
+        
+        // Reorder items
+        const newOrder = [...items];
+        newOrder.splice(draggedIndex, 1);
+        newOrder.splice(dropIndex, 0, draggedItem.itemName);
+        
+        await reorderFilterItems(groupId, newOrder, parentId);
+        setDraggedItem(null);
+    };
+
+    // Drag and drop handlers for filter groups
+    const handleGroupDragStart = (e: React.DragEvent, groupId: string) => {
+        setDraggedGroup(groupId);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', ''); // Required for Firefox
+        if (e.currentTarget instanceof HTMLElement) {
+            e.currentTarget.style.opacity = '0.5';
+        }
+    };
+
+    const handleGroupDragEnd = (e: React.DragEvent) => {
+        if (e.currentTarget instanceof HTMLElement) {
+            e.currentTarget.style.opacity = '1';
+        }
+        setDraggedGroup(null);
+        setDragOverGroup(null);
+    };
+
+    const handleGroupDragOver = (e: React.DragEvent, groupId: string) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        if (draggedGroup && draggedGroup !== groupId) {
+            setDragOverGroup(groupId);
+        }
+    };
+
+    const handleGroupDragLeave = () => {
+        setDragOverGroup(null);
+    };
+
+    const handleGroupDrop = async (e: React.DragEvent, groupId: string) => {
+        e.preventDefault();
+        setDragOverGroup(null);
+        
+        if (!draggedGroup || draggedGroup === groupId) {
+            return;
+        }
+        
+        const currentOrder = [...filterGroupOrder];
+        const draggedIndex = currentOrder.indexOf(draggedGroup);
+        const dropIndex = currentOrder.indexOf(groupId);
+        
+        if (draggedIndex === -1 || dropIndex === -1) return;
+        
+        // Reorder groups
+        const newOrder = [...currentOrder];
+        newOrder.splice(draggedIndex, 1);
+        newOrder.splice(dropIndex, 0, draggedGroup);
+        
+        await reorderFilterGroups(newOrder);
+        setDraggedGroup(null);
+    };
+
     const toggleConfigSection = (groupId: string) => {
         setCollapsedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
     };
@@ -487,11 +642,29 @@ const LabelsPage: React.FC = () => {
         const isGenreGroup = filterAssignments.genre === group.id;
         const isPlatformGroup = filterAssignments.platform === group.id;
 
+        const isGroupDragging = draggedGroup === group.id;
+        const isGroupDragOver = dragOverGroup === group.id;
+        
         return (
-        <div key={group.id} className="bg-white border-4 border-black">
+        <div 
+            key={group.id} 
+            className={`bg-white border-4 border-black transition-all ${isGroupDragging ? 'opacity-50' : ''} ${isGroupDragOver ? 'border-[#FFD700] bg-yellow-50' : ''}`}
+            draggable
+            onDragStart={(e) => handleGroupDragStart(e, group.id)}
+            onDragEnd={handleGroupDragEnd}
+            onDragOver={(e) => handleGroupDragOver(e, group.id)}
+            onDragLeave={handleGroupDragLeave}
+            onDrop={(e) => handleGroupDrop(e, group.id)}
+        >
             <div className="flex flex-col gap-3 border-b-4 border-black p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3">
+                        <div 
+                            className="cursor-grab active:cursor-grabbing p-1 text-black/40 hover:text-black"
+                            title="Drag to reorder groups"
+                        >
+                            <GripVertical className="w-6 h-6" />
+                        </div>
                         <h3 className="text-xl sm:text-2xl font-display uppercase">{group.label}</h3>
                         <button
                             onClick={() => toggleConfigSection(group.id)}
@@ -536,12 +709,50 @@ const LabelsPage: React.FC = () => {
             {!isCollapsed ? (
                 <div className="p-4 space-y-4">
                     {Object.keys(config).length > 0 ? (
-                        Object.entries(config).map(([name, itemConfig]) => {
+                        Object.entries(config).map(([name, itemConfig], index, array) => {
                             const children = itemConfig.children ? Object.entries(itemConfig.children) : [];
+                            const canMoveUp = index > 0;
+                            const canMoveDown = index < array.length - 1;
+                            const isDragging = draggedItem?.groupId === group.id && draggedItem?.itemName === name && !draggedItem?.parentId;
+                            const isDragOver = dragOverItem?.groupId === group.id && dragOverItem?.itemName === name && !dragOverItem?.parentId;
+                            
                             return (
-                                <div key={name} className="border-4 border-black bg-white p-4 space-y-4">
+                                <div 
+                                    key={name} 
+                                    className={`border-4 border-black bg-white p-4 space-y-4 transition-all ${isDragging ? 'opacity-50' : ''} ${isDragOver ? 'border-[#FFD700] bg-yellow-50' : ''}`}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, group.id, name)}
+                                    onDragEnd={handleDragEnd}
+                                    onDragOver={(e) => handleDragOver(e, group.id, name)}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, group.id, name)}
+                                >
                                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                                         <div className="flex items-center gap-4">
+                                            <div className="flex flex-col gap-1">
+                                                <div 
+                                                    className="cursor-grab active:cursor-grabbing p-1 text-black/40 hover:text-black"
+                                                    title="Drag to reorder"
+                                                >
+                                                    <GripVertical className="w-5 h-5" />
+                                                </div>
+                                                <button
+                                                    onClick={() => handleMoveFilter(group.id, name, 'up')}
+                                                    disabled={!canMoveUp}
+                                                    className="p-1 border-2 border-black bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    title="Move up"
+                                                >
+                                                    <ChevronUp className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleMoveFilter(group.id, name, 'down')}
+                                                    disabled={!canMoveDown}
+                                                    className="p-1 border-2 border-black bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    title="Move down"
+                                                >
+                                                    <ChevronDown className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                             <span 
                                                 className={`${getBackgroundClassName(itemConfig.color)} ${itemConfig.textColor} w-12 h-12 flex items-center justify-center font-bold text-lg border-2 border-black`}
                                                 style={getBackgroundStyle(itemConfig.color)}
@@ -576,9 +787,30 @@ const LabelsPage: React.FC = () => {
                                     {children.length > 0 && (
                                         <div className="border-t-2 border-dashed border-black/20 pt-3 space-y-2">
                                             <p className="text-xs font-bold uppercase tracking-[0.3em] text-black/60">Sub Filters</p>
-                                            {children.map(([childName, childConfig]) => (
+                                            {children.map(([childName, childConfig], childIndex) => {
+                                                const canMoveUp = childIndex > 0;
+                                                const canMoveDown = childIndex < children.length - 1;
+                                                return (
                                                 <div key={childName} className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border border-dashed border-black/20 p-2">
                                                     <div className="flex items-center gap-3">
+                                                        <div className="flex flex-col gap-1">
+                                                            <button
+                                                                onClick={() => handleMoveFilter(group.id, childName, 'up', name)}
+                                                                disabled={!canMoveUp}
+                                                                className="p-1 border-2 border-black bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                title="Move up"
+                                                            >
+                                                                <ChevronUp className="w-3 h-3" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleMoveFilter(group.id, childName, 'down', name)}
+                                                                disabled={!canMoveDown}
+                                                                className="p-1 border-2 border-black bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                title="Move down"
+                                                            >
+                                                                <ChevronDown className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
                                                         <span 
                                                             className={`${getBackgroundClassName(childConfig.color)} ${childConfig.textColor} w-10 h-10 flex items-center justify-center font-bold text-sm border-2 border-black`}
                                                             style={getBackgroundStyle(childConfig.color)}
@@ -607,7 +839,8 @@ const LabelsPage: React.FC = () => {
                                                         </button>
                                                     </div>
                                                 </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </div>

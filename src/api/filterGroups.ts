@@ -131,6 +131,30 @@ export const updateFilterGroupOrder = async (order: string[]): Promise<void> => 
   }
 };
 
+// Update filter items order within a group
+export const updateFilterItemsOrder = async (groupId: string, itemOrder: string[], parentId?: string): Promise<void> => {
+  const token = localStorage.getItem('token');
+  const url = `${API_BASE}/items/order`;
+  console.log('[updateFilterItemsOrder] Request URL:', url, { groupId, itemOrder, parentId });
+  
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ groupId, itemOrder, parentId }),
+  });
+  
+  console.log('[updateFilterItemsOrder] Response status:', response.status, response.statusText);
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    console.error('[updateFilterItemsOrder] Error:', error);
+    throw new Error(error.message || `Failed to update filter items order: ${response.statusText}`);
+  }
+};
+
 // Legacy localStorage functions (for backward compatibility)
 const FILTER_CONFIG_KEY = 'filterConfig';
 
