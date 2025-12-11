@@ -383,6 +383,7 @@ const UserCabinetModal: React.FC<UserCabinetModalProps> = ({
                   <label htmlFor="edit-firstName" className="block text-xs font-bold text-black uppercase tracking-wider mb-1">First Name</label>
                   <input 
                     id="edit-firstName" 
+                    name="edit-firstName"
                     type="text" 
                     value={editFirstName}
                     onChange={(e) => setEditFirstName(e.target.value)}
@@ -394,6 +395,7 @@ const UserCabinetModal: React.FC<UserCabinetModalProps> = ({
                   <label htmlFor="edit-lastName" className="block text-xs font-bold text-black uppercase tracking-wider mb-1">Last Name</label>
                   <input 
                     id="edit-lastName" 
+                    name="edit-lastName"
                     type="text" 
                     value={editLastName}
                     onChange={(e) => setEditLastName(e.target.value)}
@@ -466,6 +468,7 @@ const UserCabinetModal: React.FC<UserCabinetModalProps> = ({
                 <label htmlFor="phone" className="block text-xs font-bold text-black uppercase tracking-wider mb-1">Phone Number</label>
                 <input 
                   id="phone" 
+                  name="phone"
                   type="tel" 
                   value={editPhone}
                   onChange={(e) => setEditPhone(e.target.value)}
@@ -477,6 +480,7 @@ const UserCabinetModal: React.FC<UserCabinetModalProps> = ({
                 <label htmlFor="city" className="block text-xs font-bold text-black uppercase tracking-wider mb-1">City</label>
                 <select
                   id="city"
+                  name="city"
                   value={editCity}
                   onChange={(e) => setEditCity(e.target.value)}
                   className="w-full h-10 text-base bg-white px-3 py-1 border-2 border-black focus:outline-none focus:ring-2 focus:ring-[#FFD700]"
@@ -493,6 +497,7 @@ const UserCabinetModal: React.FC<UserCabinetModalProps> = ({
                 <label htmlFor="addressDetails" className="block text-xs font-bold text-black uppercase tracking-wider mb-1">Street, Building, Apartment</label>
                 <input
                   id="addressDetails"
+                  name="addressDetails"
                   type="text"
                   value={editAddressDetails}
                   onChange={(e) => setEditAddressDetails(e.target.value)}
@@ -575,6 +580,7 @@ const UserCabinetModal: React.FC<UserCabinetModalProps> = ({
                     </label>
                     <input
                       id="cardholder"
+                      name="cardholder"
                       type="text"
                       value={cardholderName}
                       onChange={e => setCardholderName(e.target.value)}
@@ -590,6 +596,7 @@ const UserCabinetModal: React.FC<UserCabinetModalProps> = ({
                     <div className="relative">
                       <input
                         id="card"
+                        name="card"
                         type="text"
                         inputMode="numeric"
                         value={formatCardNumber(cardNumber)}
@@ -615,6 +622,7 @@ const UserCabinetModal: React.FC<UserCabinetModalProps> = ({
                       </label>
                       <input
                         id="expiry"
+                        name="expiry"
                         type="text"
                         inputMode="numeric"
                         value={formatExpiry(cardExpiry)}
@@ -630,6 +638,7 @@ const UserCabinetModal: React.FC<UserCabinetModalProps> = ({
                       </label>
                       <input
                         id="cvv"
+                        name="cvv"
                         type="password"
                         inputMode="numeric"
                         value={cardCvv}

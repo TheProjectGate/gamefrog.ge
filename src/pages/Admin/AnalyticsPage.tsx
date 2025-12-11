@@ -394,7 +394,10 @@ const AnalyticsPage: React.FC = () => {
 
         {/* Status filter */}
         <div className="mb-4">
+          <label htmlFor="analytics-order-status-filter" className="sr-only">Filter orders by status</label>
           <select
+            id="analytics-order-status-filter"
+            name="analytics-order-status-filter"
             value={orderStatusFilter}
             onChange={(e) => setOrderStatusFilter(e.target.value as OrderStatus | 'all')}
             className="bg-white border-4 border-black px-4 py-2 font-bold uppercase focus:outline-none focus:ring-4 focus:ring-[#FFD700]"
@@ -509,7 +512,10 @@ const AnalyticsPage: React.FC = () => {
 
             {/* Search */}
             <div className="mb-6">
+              <label htmlFor="analytics-user-search" className="sr-only">Search users</label>
               <input
+                id="analytics-user-search"
+                name="analytics-user-search"
                 type="text"
                 placeholder="Search users by email or name..."
                 value={userSearchQuery}
@@ -737,6 +743,8 @@ const AnalyticsPage: React.FC = () => {
                       <td className="p-4">
                         <div className="flex items-center gap-2">
                           <input
+                            id={`analytics-discount-${p.id}`}
+                            name={`analytics-discount-${p.id}`}
                             type="number"
                             min={1}
                             max={90}

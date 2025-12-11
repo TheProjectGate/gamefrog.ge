@@ -64,9 +64,9 @@ const Footer: React.FC<FooterProps> = ({ onNavigate, platformConfig, onPlatformC
             <div>
               <h4 className="font-bold text-lg uppercase text-white tracking-wider">{t('footer.platforms')}</h4>
               <ul className="mt-4 space-y-2">
-                {Object.keys(platformConfig).map(platform => (
+                {platformConfig && typeof platformConfig === 'object' ? Object.keys(platformConfig).map(platform => (
                     <li key={platform}><button onClick={() => onPlatformClick(platform)} className="hover:text-white transition-colors">{platform}</button></li>
-                ))}
+                )) : null}
               </ul>
             </div>
           </div>

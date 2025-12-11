@@ -26,8 +26,8 @@ const HomePage: React.FC = () => {
     const wishlist = useStore(state => state.wishlist);
     const filterGroups = useStore(state => state.filterGroups);
     const filterAssignments = useStore(state => state.filterAssignments);
-    const genreConfig = filterGroups[filterAssignments.genre]?.items || {};
-    const platformConfig = filterGroups[filterAssignments.platform]?.items || {};
+    const genreConfig = (filterAssignments.genre && filterGroups[filterAssignments.genre]?.items) || {};
+    const platformConfig = (filterAssignments.platform && filterGroups[filterAssignments.platform]?.items) || {};
 
     const [selectedPlatform, setSelectedPlatform] = useState<string>(ALL_PLATFORMS_VALUE);
     const [sectionsOrder, setSectionsOrder] = useState<HomeSection[]>([]);

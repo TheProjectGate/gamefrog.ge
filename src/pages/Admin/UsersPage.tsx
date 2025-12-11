@@ -134,6 +134,8 @@ const UsersPage: React.FC = () => {
         {/* Search */}
         <div className="mb-6">
           <input
+            id="users-search"
+            name="users-search"
             type="text"
             placeholder="Search users by email or name..."
             value={searchQuery}

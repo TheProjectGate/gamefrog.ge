@@ -15,8 +15,8 @@ const WishlistPage: React.FC = () => {
     const goBack = useStore(state => state.goBack);
     const filterGroups = useStore(state => state.filterGroups);
     const filterAssignments = useStore(state => state.filterAssignments);
-    const genreConfig = filterGroups[filterAssignments.genre]?.items || {};
-    const platformConfig = filterGroups[filterAssignments.platform]?.items || {};
+    const genreConfig = (filterAssignments.genre && filterGroups[filterAssignments.genre]?.items) || {};
+    const platformConfig = (filterAssignments.platform && filterGroups[filterAssignments.platform]?.items) || {};
 
     const getIconNode = (iconName?: string, className?: string) => {
         if (!iconName) return null;

@@ -107,7 +107,7 @@ const App: React.FC = () => {
     clearCart: state.clearCart,
   }));
 
-  const platformConfig = filterGroups[filterAssignments.platform]?.items || {};
+  const platformConfig = (filterAssignments.platform && filterGroups[filterAssignments.platform]?.items) || {};
   const isAdminView = currentView === 'admin';
 
   const [chatGreetingTrigger, setChatGreetingTrigger] = useState(0);
@@ -133,6 +133,9 @@ const App: React.FC = () => {
     let isMounted = true;
     
     const loadActiveOffer = async () => {
+      // #region agent log
+      fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:135',message:'loadActiveOffer called',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
       try {
         const offer = await fetchActiveOffer();
         if (offer && isMounted) {
@@ -247,6 +250,9 @@ const App: React.FC = () => {
         }
       } catch (error) {
         console.error('Failed to fetch active offer:', error);
+        // #region agent log
+        fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:248',message:'loadActiveOffer error',data:{error:error instanceof Error?error.toString():String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
       }
     };
 

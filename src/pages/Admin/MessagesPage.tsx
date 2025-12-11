@@ -74,6 +74,8 @@ const MessagesPage: React.FC = () => {
           <div>
             <label className="block font-bold text-sm mb-1">Subject</label>
             <input
+              id="message-subject"
+              name="message-subject"
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
@@ -82,8 +84,10 @@ const MessagesPage: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block font-bold text-sm mb-1">Message Body</label>
+            <label htmlFor="message-body" className="block font-bold text-sm mb-1">Message Body</label>
             <textarea
+              id="message-body"
+              name="message-body"
               value={body}
               onChange={(e) => setBody(e.target.value)}
               className="w-full border-2 border-black p-3 bg-white min-h-[160px]"
@@ -113,8 +117,10 @@ const MessagesPage: React.FC = () => {
         {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
-            <label className="block font-bold text-sm mb-2">Search Messages</label>
+            <label htmlFor="messages-search" className="block font-bold text-sm mb-2">Search Messages</label>
             <input
+              id="messages-search"
+              name="messages-search"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -123,8 +129,10 @@ const MessagesPage: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block font-bold text-sm mb-2">Filter by Status</label>
+            <label htmlFor="messages-filter-read" className="block font-bold text-sm mb-2">Filter by Status</label>
             <select
+              id="messages-filter-read"
+              name="messages-filter-read"
               value={filterRead}
               onChange={(e) => setFilterRead(e.target.value as 'all' | 'read' | 'unread')}
               className="w-full border-2 border-black p-2 bg-white"

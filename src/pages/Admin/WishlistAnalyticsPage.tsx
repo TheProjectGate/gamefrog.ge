@@ -90,6 +90,8 @@ const WishlistAnalyticsPage: React.FC = () => {
                 <td className="p-4">
                   <div className="flex items-center gap-2">
                     <input
+                      id={`wishlist-discount-${p.id}`}
+                      name={`wishlist-discount-${p.id}`}
                       type="number"
                       min={1}
                       max={90}

@@ -19,8 +19,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onAddToCa
   const openProductModal = useStore(state => state.openProductModal);
   const filterGroups = useStore(state => state.filterGroups);
   const filterAssignments = useStore(state => state.filterAssignments);
-  const genreConfig = filterGroups[filterAssignments.genre]?.items || {};
-  const platformConfig = filterGroups[filterAssignments.platform]?.items || {};
+  const genreConfig = (filterAssignments.genre && filterGroups[filterAssignments.genre]?.items) || {};
+  const platformConfig = (filterAssignments.platform && filterGroups[filterAssignments.platform]?.items) || {};
   const [imageError, setImageError] = useState(false);
   const [isVideoMode, setIsVideoMode] = useState(false);
   const [isVideoFullscreen, setIsVideoFullscreen] = useState(false);

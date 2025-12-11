@@ -115,6 +115,8 @@ const ProductSearch: React.FC<ProductSearchProps> = ({ onSelectProduct }) => {
         </div>
         <input
           ref={inputRef}
+          id="product-search"
+          name="product-search"
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

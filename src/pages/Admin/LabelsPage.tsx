@@ -211,18 +211,20 @@ const ConfigFormModal: React.FC<{
                 </div>
                 <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
                     <div>
-                        <label className="block font-bold mb-1">{parentLabel ? `${parentLabel} Sub Filter Name` : `${group.label} Name`}</label>
-                        <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full border-2 border-black p-2" required />
+                        <label htmlFor="filter-item-name" className="block font-bold mb-1">{parentLabel ? `${parentLabel} Sub Filter Name` : `${group.label} Name`}</label>
+                        <input id="filter-item-name" name="filter-item-name" type="text" value={name} onChange={e => setName(e.target.value)} className="w-full border-2 border-black p-2" required />
                     </div>
                     <div>
-                        <label className="block font-bold mb-1">Symbol (3 chars max)</label>
-                        <input type="text" value={config.symbol} onChange={e => setConfig(c => ({...c, symbol: e.target.value.substring(0,3).toUpperCase()}))} className="w-full border-2 border-black p-2" required maxLength={3} />
+                        <label htmlFor="filter-item-symbol" className="block font-bold mb-1">Symbol (3 chars max)</label>
+                        <input id="filter-item-symbol" name="filter-item-symbol" type="text" value={config.symbol} onChange={e => setConfig(c => ({...c, symbol: e.target.value.substring(0,3).toUpperCase()}))} className="w-full border-2 border-black p-2" required maxLength={3} />
                     </div>
                     <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <div className="w-full sm:w-1/2">
-                            <label className="block font-bold mb-0.5 text-sm">Background Color</label>
+                            <label htmlFor="filter-item-background-color" className="block font-bold mb-0.5 text-sm">Background Color</label>
                             <div className="flex gap-1.5">
                                 <input 
+                                    id="filter-item-background-color"
+                                    name="filter-item-background-color"
                                     type="text" 
                                     value={config.color} 
                                     onChange={e => {
@@ -239,6 +241,8 @@ const ConfigFormModal: React.FC<{
                                     required 
                                 />
                                 <input 
+                                    id="filter-item-background-color-picker"
+                                    name="filter-item-background-color-picker"
                                     type="color" 
                                     value={isHexColor(config.color) ? config.color : '#000000'} 
                                     onChange={e => setConfig(c => ({...c, color: e.target.value.toUpperCase()}))} 
@@ -249,17 +253,19 @@ const ConfigFormModal: React.FC<{
                             <p className="text-[10px] text-black/60 mt-0.5 leading-tight">Hex (#000000) or Tailwind (bg-blue-500)</p>
                         </div>
                         <div className="w-full sm:w-1/2">
-                            <label className="block font-bold mb-0.5 text-sm">Text Color</label>
-                            <input type="text" value={config.textColor} onChange={e => setConfig(c => ({...c, textColor: e.target.value}))} className="w-full border-2 border-black p-1.5 text-sm h-10" placeholder="e.g. text-white" required />
+                            <label htmlFor="filter-item-text-color" className="block font-bold mb-0.5 text-sm">Text Color</label>
+                            <input id="filter-item-text-color" name="filter-item-text-color" type="text" value={config.textColor} onChange={e => setConfig(c => ({...c, textColor: e.target.value}))} className="w-full border-2 border-black p-1.5 text-sm h-10" placeholder="e.g. text-white" required />
                         </div>
                     </div>
                     <div>
-                        <label className="block font-bold mb-1">Icon (Lucide or custom SVG)</label>
+                        <label htmlFor="filter-item-icon-name" className="block font-bold mb-1">Icon (Lucide or custom SVG)</label>
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 border-2 border-black flex items-center justify-center bg-white flex-shrink-0">
                                 <IconPreview name={config.iconName} customSvg={config.customSvg} className="w-6 h-6" />
                             </div>
                             <input 
+                                id="filter-item-icon-name"
+                                name="filter-item-icon-name"
                                 type="text" 
                                 value={config.iconName || ''} 
                                 onChange={e => setConfig(c => ({...c, iconName: e.target.value, customSvg: undefined}))} 
@@ -271,8 +277,10 @@ const ConfigFormModal: React.FC<{
                             </button>
                         </div>
                         <div className="mt-2">
-                            <label className="block font-bold mb-1 text-sm">Or upload a custom SVG:</label>
+                            <label htmlFor="filter-item-svg-upload" className="block font-bold mb-1 text-sm">Or upload a custom SVG:</label>
                             <input 
+                                id="filter-item-svg-upload"
+                                name="filter-item-svg-upload"
                                 type="file" 
                                 accept=".svg,image/svg+xml" 
                                 onChange={handleFileUpload}
@@ -291,7 +299,7 @@ const ConfigFormModal: React.FC<{
                         {isPickerOpen && (
                             <div className="mt-3 border-2 border-black p-3 bg-white">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <input value={iconQuery} onChange={e => setIconQuery(e.target.value)} placeholder="Search icons..." className="flex-1 border-2 border-black p-2" />
+                                    <input id="icon-search" name="icon-search" value={iconQuery} onChange={e => setIconQuery(e.target.value)} placeholder="Search icons..." className="flex-1 border-2 border-black p-2" />
                                     <button type="button" onClick={() => setIconQuery('')} className="border-2 border-black px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200">Clear</button>
                                 </div>
                                 <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2 max-h-56 overflow-y-auto overflow-x-hidden">
@@ -361,8 +369,10 @@ const GroupFormModal: React.FC<{
                 className="p-4 space-y-4"
             >
                 <div>
-                    <label className="block font-bold mb-2">Group Name</label>
+                    <label htmlFor="filter-group-name" className="block font-bold mb-2">Group Name</label>
                     <input
+                        id="filter-group-name"
+                        name="filter-group-name"
                         type="text"
                         value={label}
                         onChange={e => onChange(e.target.value)}

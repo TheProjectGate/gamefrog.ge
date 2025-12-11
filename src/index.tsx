@@ -8,13 +8,20 @@ import { syncDocumentPlatformState } from './platform';
 import { PlatformProvider } from './context/PlatformContext';
 
 // Глобальные обработчики ошибок для отладки
-window.addEventListener('error', () => {});
+// #region agent log
+window.addEventListener('error', (event) => {
+  fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.tsx:11',message:'Global error caught',data:{message:event.message,filename:event.filename,lineno:event.lineno,colno:event.colno,error:event.error?.toString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+});
+// #endregion
 
+// #region agent log
 window.addEventListener('unhandledrejection', (event) => {
+  fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.tsx:17',message:'Unhandled promise rejection',data:{reason:event.reason?.toString(),stack:event.reason?.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
   // Предотвращаем вывод ошибки в консоль браузера по умолчанию
   // но мы уже залогировали её выше
   event.preventDefault();
 });
+// #endregion
 
 // Устанавливаем начальный язык из localStorage
 const savedLanguage = localStorage.getItem('i18nextLng');
@@ -25,6 +32,45 @@ if (savedLanguage === 'en' || savedLanguage === 'ka') {
 }
 
 syncDocumentPlatformState();
+
+// Fix browser-injected form fields that lack id/name attributes
+// This handles fields created by password managers and autofill features
+if (typeof window !== 'undefined') {
+  const fixBrowserInjectedFields = () => {
+    // Find all input fields that have tabindex="-1" and aria-disabled="true" but no id or name
+    const inputs = document.querySelectorAll('input[tabindex="-1"][aria-disabled="true"]:not([id]):not([name])');
+    inputs.forEach((input, index) => {
+      const htmlInput = input as HTMLInputElement;
+      if (!htmlInput.id && !htmlInput.name) {
+        // Add both id and name attributes
+        htmlInput.id = `browser-autofill-field-${index}`;
+        htmlInput.name = `browser-autofill-field-${index}`;
+      }
+    });
+  };
+
+  // Run immediately and also after DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fixBrowserInjectedFields);
+  } else {
+    fixBrowserInjectedFields();
+  }
+
+  // Also run after a short delay to catch fields injected later by password managers
+  setTimeout(fixBrowserInjectedFields, 500);
+  setTimeout(fixBrowserInjectedFields, 1000);
+  setTimeout(fixBrowserInjectedFields, 2000);
+
+  // Use MutationObserver to catch fields added dynamically
+  const observer = new MutationObserver(() => {
+    fixBrowserInjectedFields();
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+}
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

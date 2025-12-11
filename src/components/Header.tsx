@@ -281,6 +281,8 @@ const Header: React.FC = () => {
             </span>
             <input
               ref={searchInputRef}
+              id="header-search"
+              name="header-search"
               type="search"
               placeholder={t('header.searchPlaceholder')}
               value={searchQuery}

@@ -322,6 +322,9 @@ const buildPurchasedProductsFromSummary = (
   summaryItems: CheckoutSummaryItem[],
   products: Product[]
 ) => {
+  if (!Array.isArray(summaryItems) || !Array.isArray(products)) {
+    return [];
+  }
   return summaryItems.flatMap(item => {
     const baseProduct = products.find(p => p.id === item.productId);
     const fallbackProduct: Product = {
@@ -585,12 +588,16 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
   // Note: These are computed on access, not reactive. Use selectors in components instead.
   get genreConfig() {
     const state = get();
-    const group = state.filterGroups[state.filterAssignments.genre];
+    const genreId = state.filterAssignments.genre;
+    if (!genreId) return {};
+    const group = state.filterGroups[genreId];
     return group ? group.items : {};
   },
   get platformConfig() {
     const state = get();
-    const group = state.filterGroups[state.filterAssignments.platform];
+    const platformId = state.filterAssignments.platform;
+    if (!platformId) return {};
+    const group = state.filterGroups[platformId];
     return group ? group.items : {};
   },
   get allGenres() { return Object.keys(get().genreConfig) },
@@ -651,13 +658,27 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
     }
   },
   fetchProducts: async (forceRefresh: boolean = false) => {
+    // #region agent log
+    fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:653',message:'fetchProducts called',data:{forceRefresh},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
     set({ isLoading: true });
     // Load filter groups first
     await get().loadFilterGroups();
-    const products = await fetchProductsAPI(forceRefresh);
-    const maxPrice = products.reduce((max, product) => Math.max(max, product.price), 0);
+    // #region agent log
+    let products;
+    try {
+      products = await fetchProductsAPI(forceRefresh);
+      fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:657',message:'fetchProductsAPI success',data:{productCount:products.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    } catch (error) {
+      fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:657',message:'fetchProductsAPI error',data:{error:error instanceof Error?error.toString():String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      throw error;
+    }
+    // #endregion
+    // Ensure products is an array
+    const safeProducts = Array.isArray(products) ? products : [];
+    const maxPrice = safeProducts.length > 0 ? safeProducts.reduce((max, product) => Math.max(max, product.price || 0), 0) : 0;
     set((state) => ({
-      products: products.map(p => ({
+      products: safeProducts.map(p => ({
         ...p,
         wishlistCount: typeof p.wishlistCount === 'number' ? p.wishlistCount : 0,
         discountPercent: typeof p.discountPercent === 'number' ? p.discountPercent : undefined,
@@ -674,7 +695,10 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
     try {
       const raw = localStorage.getItem(AUTH_KEY);
       if (raw) {
-        const saved = JSON.parse(raw) as { 
+        // #region agent log
+        let saved;
+        try {
+          saved = JSON.parse(raw) as { 
           email?: string; 
           password?: string; 
           isLoggedIn?: boolean; 
@@ -685,6 +709,14 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
           phone?: string;
           address?: string;
         };
+        } catch (parseError) {
+          // #region agent log
+          fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:702',message:'JSON parse error in localStorage',data:{error:parseError instanceof Error?parseError.toString():String(parseError)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+          // #endregion
+          console.error('[useStore] Failed to parse localStorage auth data:', parseError);
+          return; // Exit early if parsing fails
+        }
+        // #endregion
         if (saved?.isLoggedIn && saved?.email) {
           // Set initial state from localStorage
           set({
@@ -741,15 +773,6 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
               }));
             }
             
-            // Load orders/purchase history, messages and wishlist
-            if (saved.userRole === 'admin') {
-              // Admin loads all orders
-              await get().loadOrders();
-            } else {
-              // Regular user loads only their orders
-              await get().loadOrders(saved.email);
-            }
-            
             // Check if token exists - if not, user needs to log in again
             const token = localStorage.getItem('token');
             if (!token) {
@@ -758,7 +781,7 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
               set({ isLoggedIn: false });
               localStorage.setItem(AUTH_KEY, JSON.stringify({ ...saved, isLoggedIn: false }));
             } else {
-              // Load messages, wishlist and user settings for current user
+              // Load orders/purchase history, messages and wishlist
               if (saved.email) {
                 // Admin loads all orders, regular users load only their orders
                 if (saved.userRole === 'admin') {
@@ -793,6 +816,9 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
       }
     } catch (error) {
       console.error('[useStore] Failed to restore session from localStorage:', error);
+      // #region agent log
+      fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:810',message:'localStorage restore error',data:{error:error instanceof Error?error.toString():String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+      // #endregion
     }
   },
   loadOrders: async (email) => {
@@ -1235,6 +1261,9 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
   openSaleModal: () => set({ isSaleModalOpen: true }),
   closeSaleModal: () => set({ isSaleModalOpen: false }),
   register: async (email, password, firstName, lastName, avatar, phone, address) => {
+    // #region agent log
+    fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:1248',message:'register called',data:{email},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
     try {
       // Save user to database via API
       const response = await fetch(`${getApiBaseUrl()}/api/users/register`, {
@@ -1247,6 +1276,9 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
 
       if (!response.ok) {
         const error = await response.json();
+        // #region agent log
+        fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:1259',message:'register API error',data:{status:response.status,error:error.message||'Registration failed'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         throw new Error(error.message || 'Registration failed');
       }
 
@@ -1286,12 +1318,18 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
         }));
       } catch (error) {
         console.error('[useStore] Failed to save registration data to localStorage:', error);
+        // #region agent log
+        fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:1298',message:'localStorage save error',data:{error:error instanceof Error?error.toString():String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+        // #endregion
       }
       
       // Load user settings
       await get().loadUserSettings();
     } catch (error: any) {
       console.error('[useStore] Registration failed:', error);
+      // #region agent log
+      fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:1304',message:'register catch error',data:{error:error?.message||String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
       get().setToast(error.message || 'Registration failed');
       throw error;
     }

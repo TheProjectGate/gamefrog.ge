@@ -64,8 +64,8 @@ const BrowsePage: React.FC = () => {
     const toggleWishlist = useStore(state => state.toggleWishlist);
     const filterGroups = useStore(state => state.filterGroups);
     const filterGroupOrder = useStore(state => state.filterGroupOrder);
-    const genreConfig = filterGroups[filterAssignments.genre]?.items || {};
-    const platformConfig = filterGroups[filterAssignments.platform]?.items || {};
+    const genreConfig = (filterAssignments.genre && filterGroups[filterAssignments.genre]?.items) || {};
+    const platformConfig = (filterAssignments.platform && filterGroups[filterAssignments.platform]?.items) || {};
     const startCategoryTime = useStore(state => state.startCategoryTime);
     const endCategoryTime = useStore(state => state.endCategoryTime);
     

@@ -136,6 +136,8 @@ const CartPage: React.FC = () => {
                 ))}
                 <div className="flex items-center border-2 border-black px-2 py-1.5 h-9 pointer-events-auto">
                   <input
+                    id="tip-amount"
+                    name="tip-amount"
                     type="number"
                     min={0}
                     step="0.5"

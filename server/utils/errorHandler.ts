@@ -34,6 +34,27 @@ export const errorHandler = (
     path: req.path,
     method: req.method,
   });
+  // #region agent log
+  try {
+    const logPath = path.join(process.cwd(), '.cursor', 'debug.log');
+    const logEntry = JSON.stringify({
+      location: 'errorHandler.ts:31',
+      message: 'Server error caught',
+      data: {
+        error: err.message,
+        stack: isProduction ? undefined : err.stack,
+        path: req.path,
+        method: req.method,
+        code: (err as any).code,
+      },
+      timestamp: Date.now(),
+      sessionId: 'debug-session',
+      runId: 'run1',
+      hypothesisId: 'E',
+    }) + '\n';
+    fs.appendFileSync(logPath, logEntry, 'utf8');
+  } catch (logError) {}
+  // #endregion
 
   // Handle known operational errors
   if (err instanceof AppError) {

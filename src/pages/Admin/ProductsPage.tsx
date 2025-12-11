@@ -186,8 +186,9 @@ const BundleFormModal: React.FC<{
                     {/* Basic Info */}
                     <div className="space-y-4">
                         <div>
-                            <label className="block font-bold mb-1">Bundle Name *</label>
+                            <label htmlFor="bundle-name" className="block font-bold mb-1">Bundle Name *</label>
                             <input
+                                id="bundle-name"
                                 type="text"
                                 name="name"
                                 value={formData.name}
@@ -198,8 +199,9 @@ const BundleFormModal: React.FC<{
                         </div>
 
                         <div>
-                            <label className="block font-bold mb-1">Description</label>
+                            <label htmlFor="bundle-description" className="block font-bold mb-1">Description</label>
                             <textarea
+                                id="bundle-description"
                                 name="description"
                                 value={formData.description}
                                 onChange={handleChange}
@@ -209,7 +211,7 @@ const BundleFormModal: React.FC<{
                         </div>
 
                         <div>
-                            <label className="block font-bold mb-1">Bundle Image *</label>
+                            <label htmlFor="bundle-image-upload" className="block font-bold mb-1">Bundle Image *</label>
                             <div className="mb-2 flex gap-2">
                                 <button
                                     type="button"
@@ -238,6 +240,8 @@ const BundleFormModal: React.FC<{
                             {imageInputMethod === 'upload' ? (
                                 <div>
                                     <input
+                                        id="bundle-image-upload"
+                                        name="bundle-image-upload"
                                         ref={fileInputRef}
                                         type="file"
                                         accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
@@ -254,6 +258,7 @@ const BundleFormModal: React.FC<{
                                 </div>
                             ) : (
                                 <input
+                                    id="bundle-image-url"
                                     type="text"
                                     name="imageUrl"
                                     value={formData.imageUrl}
@@ -279,8 +284,9 @@ const BundleFormModal: React.FC<{
                         </div>
 
                         <div>
-                            <label className="block font-bold mb-1">YouTube Video (Optional)</label>
+                            <label htmlFor="bundle-youtube-video-id" className="block font-bold mb-1">YouTube Video (Optional)</label>
                             <input 
+                                id="bundle-youtube-video-id"
                                 type="text" 
                                 name="youtubeVideoId" 
                                 value={formData.youtubeVideoId || ''} 
@@ -295,8 +301,9 @@ const BundleFormModal: React.FC<{
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block font-bold mb-1">Price</label>
+                                <label htmlFor="bundle-price" className="block font-bold mb-1">Price</label>
                                 <input
+                                    id="bundle-price"
                                     type="number"
                                     name="price"
                                     value={formData.price}
@@ -307,8 +314,9 @@ const BundleFormModal: React.FC<{
                                 />
                             </div>
                             <div>
-                                <label className="block font-bold mb-1">Stock</label>
+                                <label htmlFor="bundle-stock" className="block font-bold mb-1">Stock</label>
                                 <input
+                                    id="bundle-stock"
                                     type="number"
                                     name="stock"
                                     value={formData.stock}
@@ -320,8 +328,9 @@ const BundleFormModal: React.FC<{
                         </div>
 
                         <div>
-                            <label className="block font-bold mb-1">Gold Coins</label>
+                            <label htmlFor="bundle-gold-coins" className="block font-bold mb-1">Gold Coins</label>
                             <input
+                                id="bundle-gold-coins"
                                 type="number"
                                 name="goldCoins"
                                 value={formData.goldCoins || 0}
@@ -341,8 +350,10 @@ const BundleFormModal: React.FC<{
                             </p>
                             <div className="border-2 border-black max-h-64 overflow-y-auto divide-y divide-dashed divide-black/20">
                                 {bundleCandidates.map(candidate => (
-                                    <label key={candidate.id} className="flex items-center gap-2 p-3 hover:bg-gray-50 cursor-pointer">
+                                    <label key={candidate.id} htmlFor={`bundle-item-${candidate.id}`} className="flex items-center gap-2 p-3 hover:bg-gray-50 cursor-pointer">
                                         <input 
+                                            id={`bundle-item-${candidate.id}`}
+                                            name={`bundle-item-${candidate.id}`}
                                             type="checkbox" 
                                             checked={formData.bundleItems?.includes(candidate.id) || false} 
                                             onChange={() => handleBundleToggle(candidate.id)} 
@@ -504,8 +515,10 @@ const ProductFormModal: React.FC<{
                     return (
                         <div key={itemName} className="border border-dashed border-black/20 p-3 bg-white space-y-2">
                             <div className="flex items-center justify-between gap-2">
-                                <label className="flex items-center gap-2 font-semibold text-sm">
+                                <label htmlFor={`filter-parent-${group.id}-${itemName}`} className="flex items-center gap-2 font-semibold text-sm">
                                     <input
+                                        id={`filter-parent-${group.id}-${itemName}`}
+                                        name={`filter-parent-${group.id}-${itemName}`}
                                         type="checkbox"
                                         checked={parentSelected}
                                         onChange={() => onParentToggle(itemName, childNames)}
@@ -547,8 +560,10 @@ const ProductFormModal: React.FC<{
                                         const childConfig = itemConfig.children?.[child];
                                         const childIcon = childConfig?.iconName;
                                         return (
-                                            <label key={child} className="flex items-center gap-2 text-xs font-semibold">
+                                            <label key={child} htmlFor={`filter-child-${group.id}-${itemName}-${child}`} className="flex items-center gap-2 text-xs font-semibold">
                                                 <input
+                                                    id={`filter-child-${group.id}-${itemName}-${child}`}
+                                                    name={`filter-child-${group.id}-${itemName}-${child}`}
                                                     type="checkbox"
                                                     checked={selectedChildren.has(`${itemName}${FILTER_CHILD_DELIMITER}${child}`)}
                                                     onChange={() => onChildToggle(itemName, child, childNames)}
@@ -769,8 +784,8 @@ const ProductFormModal: React.FC<{
                     </header>
                     <div className="flex flex-col gap-4 lg:flex-row">
                         <div className="flex-1 space-y-2">
-                            <label className="block font-bold text-sm">Name</label>
-                            <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full border-2 border-black p-2" required />
+                            <label htmlFor="product-name" className="block font-bold text-sm">Name</label>
+                            <input id="product-name" type="text" name="name" value={formData.name} onChange={handleChange} className="w-full border-2 border-black p-2" required />
                         </div>
                         <div className="flex-1 space-y-2">
                             <label className="block font-bold text-sm">Product Image</label>
@@ -802,6 +817,8 @@ const ProductFormModal: React.FC<{
                             {imageInputMethod === 'upload' ? (
                                 <div>
                                     <input
+                                        id="product-image-upload"
+                                        name="product-image-upload"
                                         ref={fileInputRef}
                                         type="file"
                                         accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
@@ -818,6 +835,7 @@ const ProductFormModal: React.FC<{
                                 </div>
                             ) : (
                                 <input 
+                                    id="product-image-url"
                                     type="text" 
                                     name="imageUrl" 
                                     value={formData.imageUrl} 
@@ -838,8 +856,9 @@ const ProductFormModal: React.FC<{
                             )}
                         </div>
                         <div className="flex-1 space-y-2">
-                            <label className="block font-bold text-sm">YouTube Video (Optional)</label>
+                            <label htmlFor="product-youtube-video-id" className="block font-bold text-sm">YouTube Video (Optional)</label>
                             <input 
+                                id="product-youtube-video-id"
                                 type="text" 
                                 name="youtubeVideoId" 
                                 value={formData.youtubeVideoId || ''} 
@@ -853,8 +872,8 @@ const ProductFormModal: React.FC<{
                         </div>
                     </div>
                     <div>
-                        <label className="block font-bold text-sm mb-1">Description</label>
-                        <textarea name="description" value={formData.description} onChange={handleChange} className="w-full border-2 border-black p-2" rows={4} required></textarea>
+                        <label htmlFor="product-description" className="block font-bold text-sm mb-1">Description</label>
+                        <textarea id="product-description" name="description" value={formData.description} onChange={handleChange} className="w-full border-2 border-black p-2" rows={4} required></textarea>
                     </div>
                 </section>
                 <section className="border-4 border-black bg-white p-4 space-y-4">
@@ -864,28 +883,30 @@ const ProductFormModal: React.FC<{
                     </header>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block font-bold text-sm">Price</label>
-                            <input type="number" name="price" value={formData.price} onChange={handleChange} className="w-full border-2 border-black p-2" required step="0.01" />
+                            <label htmlFor="product-price" className="block font-bold text-sm">Price</label>
+                            <input id="product-price" type="number" name="price" value={formData.price} onChange={handleChange} className="w-full border-2 border-black p-2" required step="0.01" />
                         </div>
                         <div>
-                            <label className="block font-bold text-sm">Stock</label>
-                            <input type="number" name="stock" value={formData.stock} onChange={handleChange} className="w-full border-2 border-black p-2" required />
+                            <label htmlFor="product-stock" className="block font-bold text-sm">Stock</label>
+                            <input id="product-stock" type="number" name="stock" value={formData.stock} onChange={handleChange} className="w-full border-2 border-black p-2" required />
                         </div>
                         <div>
-                            <label className="block font-bold text-sm">Condition</label>
-                            <select name="condition" value={formData.condition} onChange={handleChange} className="w-full border-2 border-black p-2 bg-white">
+                            <label htmlFor="product-condition" className="block font-bold text-sm">Condition</label>
+                            <select id="product-condition" name="condition" value={formData.condition} onChange={handleChange} className="w-full border-2 border-black p-2 bg-white">
                                 <option value="new">New</option>
                                 <option value="used">Used</option>
                             </select>
                         </div>
                         <div>
-                            <label className="block font-bold text-sm">Gold Coin Reward</label>
-                            <input type="number" name="goldCoins" value={formData.goldCoins || 0} onChange={handleChange} className="w-full border-2 border-black p-2" min="0" />
+                            <label htmlFor="product-gold-coins" className="block font-bold text-sm">Gold Coin Reward</label>
+                            <input id="product-gold-coins" type="number" name="goldCoins" value={formData.goldCoins || 0} onChange={handleChange} className="w-full border-2 border-black p-2" min="0" />
                         </div>
                     </div>
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                         <label className="flex items-center gap-3 font-bold text-sm">
                             <input
+                                id="product-coin-exclusive"
+                                name="coinExclusive"
                                 type="checkbox"
                                 checked={!!formData.coinExclusive}
                                 onChange={(e) => handleCoinExclusiveToggle(e.target.checked)}
@@ -894,8 +915,9 @@ const ProductFormModal: React.FC<{
                         </label>
                         {formData.coinExclusive && (
                             <div className="flex-1 md:ml-6">
-                                <label className="block font-bold text-sm">Coin Price</label>
+                                <label htmlFor="product-coin-price" className="block font-bold text-sm">Coin Price</label>
                                 <input
+                                    id="product-coin-price"
                                     type="number"
                                     name="coinPrice"
                                     value={formData.coinPrice || 0}
@@ -912,6 +934,8 @@ const ProductFormModal: React.FC<{
                             {availableTags.map(tag => (
                                 <label key={tag} className="flex items-center gap-2 text-xs font-bold uppercase border-2 border-black px-3 py-1 bg-white">
                                     <input
+                                        id={`product-tag-${tag}`}
+                                        name={`product-tag-${tag}`}
                                         type="checkbox"
                                         checked={Boolean(formData.tags?.includes(tag))}
                                         onChange={() => handleTagToggle(tag)}
@@ -921,8 +945,9 @@ const ProductFormModal: React.FC<{
                             ))}
                         </div>
                         <div>
-                            <label className="block font-bold text-xs mt-2">Custom Tags (comma separated)</label>
+                            <label htmlFor="product-custom-tags" className="block font-bold text-xs mt-2">Custom Tags (comma separated)</label>
                             <input
+                                id="product-custom-tags"
                                 type="text"
                                 name="tags"
                                 value={formData.tags?.join(', ')}
@@ -953,8 +978,10 @@ const ProductFormModal: React.FC<{
                                 items.length ? (
                                     <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                                         {items.map(itemName => (
-                                            <label key={itemName} className="flex items-center gap-2 text-sm font-semibold">
+                                            <label key={itemName} htmlFor={`product-genre-${itemName}`} className="flex items-center gap-2 text-sm font-semibold">
                                                 <input
+                                                    id={`product-genre-${itemName}`}
+                                                    name={`product-genre-${itemName}`}
                                                     type="checkbox"
                                                     value={itemName}
                                                     checked={Array.isArray(formData.genre) ? formData.genre.includes(itemName) : false}
@@ -1270,8 +1297,9 @@ const OfferFormModal: React.FC<{
                         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                             {/* Offer Name (for admin only) */}
                             <div>
-                                <label className="block font-bold mb-1">Offer Name (Admin Only)</label>
+                                <label htmlFor="offer-name" className="block font-bold mb-1">Offer Name (Admin Only)</label>
                                 <input
+                                    id="offer-name"
                                     type="text"
                                     name="name"
                                     value={formData.name || ''}
@@ -1286,16 +1314,18 @@ const OfferFormModal: React.FC<{
 
                             {/* Background Color for Sale Page */}
                             <div>
-                                <label className="block font-bold mb-1">Background Color (Sale Page)</label>
+                                <label htmlFor="offer-background-color" className="block font-bold mb-1">Background Color (Sale Page)</label>
                                 <div className="flex gap-2 items-center">
                                     <input
+                                        id="offer-background-color-picker"
+                                        name="backgroundColor-picker"
                                         type="color"
-                                        name="backgroundColor"
                                         value={formData.backgroundColor || '#FFFFFF'}
                                         onChange={handleChange}
                                         className="w-16 h-10 border-2 border-black cursor-pointer"
                                     />
                                     <input
+                                        id="offer-background-color"
                                         type="text"
                                         name="backgroundColor"
                                         value={formData.backgroundColor || '#FFFFFF'}
@@ -1336,6 +1366,7 @@ const OfferFormModal: React.FC<{
                                 {imageInputMethod === 'url' ? (
                                     <div>
                                         <input
+                                            id="offer-background-image-url"
                                             key="background-image-url-input"
                                             type="text"
                                             name="backgroundImageUrl"
@@ -1362,6 +1393,8 @@ const OfferFormModal: React.FC<{
                                 ) : (
                                     <div>
                                         <input
+                                            id="offer-background-image-upload"
+                                            name="offer-background-image-upload"
                                             ref={fileInputRef}
                                             type="file"
                                             accept="image/*"
@@ -1391,8 +1424,9 @@ const OfferFormModal: React.FC<{
                             {/* Discount & End Date */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block font-bold mb-1">Discount %</label>
+                                    <label htmlFor="offer-discount-percent" className="block font-bold mb-1">Discount %</label>
                                     <input
+                                        id="offer-discount-percent"
                                         type="number"
                                         name="discountPercent"
                                         value={formData.discountPercent}
@@ -1403,8 +1437,9 @@ const OfferFormModal: React.FC<{
                                     />
                                 </div>
                                 <div>
-                                    <label className="block font-bold mb-1">Ends At *</label>
+                                    <label htmlFor="offer-ends-at" className="block font-bold mb-1">Ends At *</label>
                                     <input
+                                        id="offer-ends-at"
                                         type="datetime-local"
                                         name="endsAt"
                                         value={formData.endsAt}
@@ -1417,11 +1452,12 @@ const OfferFormModal: React.FC<{
 
                             {/* Show Frequency */}
                             <div>
-                                <label className="block font-bold mb-1">Show Frequency *</label>
+                                <label htmlFor="offer-show-frequency" className="block font-bold mb-1">Show Frequency *</label>
                                 <p className="text-xs text-black/60 mb-2">
                                     Control how often this offer appears to users
                                 </p>
                                 <select
+                                    id="offer-show-frequency"
                                     name="showFrequency"
                                     value={formData.showFrequency || 'once_per_day'}
                                     onChange={(e) => {
@@ -1453,8 +1489,10 @@ const OfferFormModal: React.FC<{
                                         allProductsForOffers.map(product => {
                                             const isSelected = formData.productIds?.includes(product.id) || false;
                                             return (
-                                                <label key={product.id} className="flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-black">
+                                                <label key={product.id} htmlFor={`offer-product-${product.id}`} className="flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-black">
                                                     <input
+                                                        id={`offer-product-${product.id}`}
+                                                        name={`offer-product-${product.id}`}
                                                         type="checkbox"
                                                         checked={isSelected}
                                                         onChange={(e) => {

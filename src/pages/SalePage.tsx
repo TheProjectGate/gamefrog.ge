@@ -14,8 +14,8 @@ const SalePage: React.FC = () => {
   const clearFilters = useStore(state => state.clearFilters);
   const filterGroups = useStore(state => state.filterGroups);
   const filterAssignments = useStore(state => state.filterAssignments);
-  const genreConfig = filterGroups[filterAssignments.genre]?.items || {};
-  const platformConfig = filterGroups[filterAssignments.platform]?.items || {};
+  const genreConfig = (filterAssignments.genre && filterGroups[filterAssignments.genre]?.items) || {};
+  const platformConfig = (filterAssignments.platform && filterGroups[filterAssignments.platform]?.items) || {};
   const navigate = useStore(state => state.navigate);
 
   const [highlightedProductIds, setHighlightedProductIds] = useState<Set<number>>(new Set());

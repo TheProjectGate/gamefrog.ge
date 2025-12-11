@@ -722,10 +722,12 @@ const SettingsPage: React.FC = () => {
                               {isEditing ? (
                                 <div className="space-y-3">
                                   <div>
-                                    <label className="block text-xs font-bold uppercase mb-1">
+                                    <label htmlFor={`payment-display-name-${setting.paymentProvider}`} className="block text-xs font-bold uppercase mb-1">
                                       Display Name
                                     </label>
                                     <input
+                                      id={`payment-display-name-${setting.paymentProvider}`}
+                                      name={`payment-display-name-${setting.paymentProvider}`}
                                       type="text"
                                       value={currentData.displayName || ''}
                                       onChange={e =>
@@ -742,11 +744,13 @@ const SettingsPage: React.FC = () => {
                                     {setting.paymentProvider === 'unipay' && (
                                       <>
                                         <div>
-                                          <label className="block text-xs font-bold uppercase mb-1">
+                                          <label htmlFor={`payment-merchant-id-${setting.paymentProvider}`} className="block text-xs font-bold uppercase mb-1">
                                             Merchant ID *
                                           </label>
                                           <p className="text-xs text-gray-600 mb-1">.env → UNIPAY_MERCHANT_ID</p>
                                           <input
+                                            id={`payment-merchant-id-${setting.paymentProvider}`}
+                                            name={`payment-merchant-id-${setting.paymentProvider}`}
                                             type="text"
                                             value={currentData.config?.merchantId || ''}
                                             onChange={e =>
@@ -757,11 +761,13 @@ const SettingsPage: React.FC = () => {
                                           />
                                         </div>
                                         <div>
-                                          <label className="block text-xs font-bold uppercase mb-1">
+                                          <label htmlFor={`payment-secret-key-${setting.paymentProvider}`} className="block text-xs font-bold uppercase mb-1">
                                             Secret Key *
                                           </label>
                                           <p className="text-xs text-gray-600 mb-1">.env → UNIPAY_SECRET_KEY (line 13)</p>
                                           <input
+                                            id={`payment-secret-key-${setting.paymentProvider}`}
+                                            name={`payment-secret-key-${setting.paymentProvider}`}
                                             type="password"
                                             value={currentData.config?.secretKey || ''}
                                             onChange={e =>
@@ -772,11 +778,13 @@ const SettingsPage: React.FC = () => {
                                           />
                                         </div>
                                         <div>
-                                          <label className="block text-xs font-bold uppercase mb-1">
+                                          <label htmlFor={`payment-merchant-user-${setting.paymentProvider}`} className="block text-xs font-bold uppercase mb-1">
                                             Merchant User
                                           </label>
                                           <p className="text-xs text-gray-600 mb-1">.env → UNIPAY_MERCHANT_USER (line 14)</p>
                                           <input
+                                            id={`payment-merchant-user-${setting.paymentProvider}`}
+                                            name={`payment-merchant-user-${setting.paymentProvider}`}
                                             type="text"
                                             value={currentData.config?.merchantUser || ''}
                                             onChange={e =>
@@ -787,10 +795,12 @@ const SettingsPage: React.FC = () => {
                                           />
                                         </div>
                                         <div>
-                                          <label className="block text-xs font-bold uppercase mb-1">
+                                          <label htmlFor={`payment-api-url-${setting.paymentProvider}`} className="block text-xs font-bold uppercase mb-1">
                                             API URL
                                           </label>
                                           <input
+                                            id={`payment-api-url-${setting.paymentProvider}`}
+                                            name={`payment-api-url-${setting.paymentProvider}`}
                                             type="text"
                                             value={
                                               currentData.config?.apiUrl ||
@@ -803,10 +813,12 @@ const SettingsPage: React.FC = () => {
                                           />
                                         </div>
                                         <div>
-                                          <label className="block text-xs font-bold uppercase mb-1">
+                                          <label htmlFor={`payment-success-url-${setting.paymentProvider}`} className="block text-xs font-bold uppercase mb-1">
                                             Success URL
                                           </label>
                                           <input
+                                            id={`payment-success-url-${setting.paymentProvider}`}
+                                            name={`payment-success-url-${setting.paymentProvider}`}
                                             type="text"
                                             value={currentData.config?.successUrl || ''}
                                             onChange={e =>
@@ -817,10 +829,12 @@ const SettingsPage: React.FC = () => {
                                           />
                                         </div>
                                         <div>
-                                          <label className="block text-xs font-bold uppercase mb-1">
+                                          <label htmlFor={`payment-cancel-url-${setting.paymentProvider}`} className="block text-xs font-bold uppercase mb-1">
                                             Cancel URL
                                           </label>
                                           <input
+                                            id={`payment-cancel-url-${setting.paymentProvider}`}
+                                            name={`payment-cancel-url-${setting.paymentProvider}`}
                                             type="text"
                                             value={currentData.config?.cancelUrl || ''}
                                             onChange={e =>
@@ -831,10 +845,12 @@ const SettingsPage: React.FC = () => {
                                           />
                                         </div>
                                         <div className="md:col-span-2">
-                                          <label className="block text-xs font-bold uppercase mb-1">
+                                          <label htmlFor={`payment-callback-url-${setting.paymentProvider}`} className="block text-xs font-bold uppercase mb-1">
                                             Callback URL
                                           </label>
                                           <input
+                                            id={`payment-callback-url-${setting.paymentProvider}`}
+                                            name={`payment-callback-url-${setting.paymentProvider}`}
                                             type="text"
                                             value={currentData.config?.callbackUrl || ''}
                                             onChange={e =>
