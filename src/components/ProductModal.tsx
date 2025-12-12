@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { Product, FilterConfig } from '../types';
 import { CloseIcon, HeartIcon, CoinIcon, PlayIcon, VolumeIcon } from './Icons';
-import useStore from '../store/useStore';
+import useStore, { FILTER_CHILD_DELIMITER } from '../store/useStore';
 import * as LucideIcons from 'lucide-react';
 import { getBackgroundStyle, getBackgroundClassName } from '../utils/colorUtils';
 import { sanitizeSVG } from '../utils/sanitize';
@@ -26,6 +26,13 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onAddToCa
   const [isVideoFullscreen, setIsVideoFullscreen] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  
+  // Общая функция нормализации и Set для дедупликации между группами
+  const normalizeName = useCallback((name: string) => name.toLowerCase().trim().replace(/\s+/g, ' '), []);
+  const allShownNormalizedRef = useRef<Set<string>>(new Set());
+  
+  // Очищаем Set при каждом рендере модального окна
+  allShownNormalizedRef.current.clear();
 
   // Extract YouTube video ID from URL or use direct ID
   const getYouTubeVideoId = useCallback((urlOrId?: string): string | null => {
@@ -308,50 +315,189 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onAddToCa
 
             <div className="flex justify-start items-center gap-2 flex-wrap text-sm">
                {(() => {
+                  // Упрощенная логика, как в ProductCard
+                  const genreGroup = filterAssignments.genre;
                   const baseGenres = Array.isArray(product.genre) ? product.genre : (product.genre ? [product.genre] : []);
-                  const extraGenres = filterAssignments.genre ? (product.filterValues?.[filterAssignments.genre] || []) : [];
+                  const extraGenres = genreGroup ? (product.filterValues?.[genreGroup] || []) : [];
                   const allGenres = [...new Set([...baseGenres, ...extraGenres])];
+                  
                   return allGenres.map((genre, index) => {
                       const config = getConfigForValue(genreConfig, genre);
                       if (!config) return null;
-                      const displayContent = config.customSvg ? (
+                      
+                      // Извлекаем displayName для дедупликации
+                      const displayName = genre.includes(FILTER_CHILD_DELIMITER) 
+                          ? genre.split(FILTER_CHILD_DELIMITER)[1] 
+                          : genre;
+                      const normalizedName = normalizeName(displayName);
+                      
+                      // Пропускаем, если уже показали это значение
+                      if (allShownNormalizedRef.current.has(normalizedName)) return null;
+                      allShownNormalizedRef.current.add(normalizedName);
+                      
+                      const showIcons = config.showIcons !== false;
+                      
+                      const displayContent = showIcons && config.customSvg ? (
                           <div className="w-4 h-4 svg-container" dangerouslySetInnerHTML={{ __html: sanitizeSVG(config.customSvg) }} />
-                      ) : config.iconName ? (
+                      ) : showIcons && config.iconName ? (
                           getIconNode(config.iconName, 'w-4 h-4')
                       ) : config.symbol ? (
                           <span className="text-xs">{config.symbol}</span>
                       ) : null;
+                      
                       if (!displayContent) return null;
                       return (
                           <div 
                               key={`${genre}-${index}`}
-                              title={genre} 
+                              title={displayName} 
                               className={`${getBackgroundClassName(config.color)} ${config.textColor} w-7 h-7 flex items-center justify-center font-bold text-sm border-2 border-black`}
                               style={getBackgroundStyle(config.color)}
+                              data-platform-chip 
+                              role="img" 
+                              aria-label={`Genre: ${displayName}`}
                           >
                               {displayContent}
                           </div>
                       );
-                  });
+                  }).filter(Boolean);
               })()}
               {(() => {
-                let platforms = [];
+                const platformGroup = filterAssignments.platform;
+                // Приоритет отдаем filterValues (новый формат), старые поля используем только для обратной совместимости
+                const filterValuePlatforms = platformGroup ? (product.filterValues?.[platformGroup] || []) : [];
+                
+                // Парсим legacy platforms
+                let legacyPlatforms: string[] = [];
                 if (Array.isArray(product.platforms)) {
-                  platforms = product.platforms;
+                  legacyPlatforms = product.platforms;
                 } else if (typeof product.platforms === 'string') {
                   try {
                     const parsed = JSON.parse(product.platforms);
                     if (Array.isArray(parsed)) {
-                      platforms = parsed;
+                      legacyPlatforms = parsed;
+                    } else if (parsed) {
+                      legacyPlatforms = [parsed];
                     }
-                  } catch (e) { /* ignore error */ }
+                  } catch (e) {
+                    if (product.platforms.trim()) {
+                      legacyPlatforms = [product.platforms];
+                    }
+                  }
+                } else if (product.platforms) {
+                  legacyPlatforms = [String(product.platforms)];
                 }
-                return platforms.map(platform => {
+                
+                // Создаем Set для отслеживания уже добавленных значений (нормализованных)
+                const addedNormalized = new Set<string>();
+                
+                // Функция для получения нормализованного имени платформы (извлекает child если есть)
+                const getNormalizedPlatformName = (platform: string): string => {
+                    const trimmed = platform.trim();
+                    if (trimmed.includes(FILTER_CHILD_DELIMITER)) {
+                        return normalizeName(trimmed.split(FILTER_CHILD_DELIMITER)[1]);
+                    }
+                    return normalizeName(trimmed);
+                };
+                
+                // Сначала добавляем значения из filterValues (приоритет)
+                const allPlatforms: string[] = [];
+                filterValuePlatforms.forEach((platform) => {
+                    const trimmed = typeof platform === 'string' ? platform.trim() : String(platform).trim();
+                    if (trimmed) {
+                        const normalized = getNormalizedPlatformName(trimmed);
+                        if (!addedNormalized.has(normalized)) {
+                            allPlatforms.push(trimmed);
+                            addedNormalized.add(normalized);
+                        }
+                    }
+                });
+                
+                // Затем добавляем значения из legacy полей, только если их еще нет
+                legacyPlatforms.forEach((platform) => {
+                    const trimmed = typeof platform === 'string' ? platform.trim() : String(platform).trim();
+                    if (trimmed) {
+                        const normalized = getNormalizedPlatformName(trimmed);
+                        if (!addedNormalized.has(normalized)) {
+                            allPlatforms.push(trimmed);
+                            addedNormalized.add(normalized);
+                        }
+                    }
+                });
+                
+                // Разделяем на родительские и дочерние значения
+                const parentPlatforms = new Set<string>();
+                const childPlatforms = new Set<string>();
+                const parentToChildren = new Map<string, Set<string>>();
+                
+                allPlatforms.forEach((platform) => {
+                    if (platform.includes(FILTER_CHILD_DELIMITER)) {
+                        const [parentKey, childKey] = platform.split(FILTER_CHILD_DELIMITER).map(s => s.trim());
+                        if (parentKey && childKey) {
+                            childPlatforms.add(platform);
+                            if (!parentToChildren.has(parentKey)) {
+                                parentToChildren.set(parentKey, new Set());
+                            }
+                            parentToChildren.get(parentKey)!.add(childKey);
+                        }
+                    } else {
+                        // Проверяем, не является ли это дочерним элементом
+                        let isChild = false;
+                        for (const [parentName, parentConfig] of Object.entries(platformConfig)) {
+                            if (parentConfig.children && parentConfig.children[platform]) {
+                                const childPlatform = `${parentName}${FILTER_CHILD_DELIMITER}${platform}`;
+                                if (!childPlatforms.has(childPlatform)) {
+                                    childPlatforms.add(childPlatform);
+                                    if (!parentToChildren.has(parentName)) {
+                                        parentToChildren.set(parentName, new Set());
+                                    }
+                                    parentToChildren.get(parentName)!.add(platform);
+                                }
+                                isChild = true;
+                                break;
+                            }
+                        }
+                        if (!isChild) {
+                            parentPlatforms.add(platform);
+                        }
+                    }
+                });
+                
+                // Показываем только дочерние значения, если они есть, иначе показываем родительские
+                const platformsToShow = new Set<string>();
+                childPlatforms.forEach(childPlatform => platformsToShow.add(childPlatform));
+                parentPlatforms.forEach(parentPlatform => {
+                    if (!parentToChildren.has(parentPlatform)) {
+                        platformsToShow.add(parentPlatform);
+                    }
+                });
+                
+                // Дедупликация: используем Map для отслеживания уже показанных значений
+                const shownPlatforms = new Map<string, string>();
+                
+                return Array.from(platformsToShow).map((platform, index) => {
+                    if (!platform) return null;
+                    
+                    // Извлекаем имя для проверки дубликатов и отображения
+                    const displayName = platform.includes(FILTER_CHILD_DELIMITER) 
+                        ? platform.split(FILTER_CHILD_DELIMITER)[1] 
+                        : platform;
+                    
+                    // Нормализуем имя для проверки дубликатов
+                    const normalizedName = normalizeName(displayName);
+                    
+                    // Пропускаем, если уже показали это значение (внутри платформ или глобально, включая жанры)
+                    if (shownPlatforms.has(normalizedName) || allShownNormalizedRef.current.has(normalizedName)) return null;
+                    shownPlatforms.set(normalizedName, platform);
+                    allShownNormalizedRef.current.add(normalizedName);
+                    
                     const config = getConfigForValue(platformConfig, platform);
                     if (!config) return null;
-                    const displayContent = config.customSvg ? (
+                    
+                    const showIcons = config.showIcons !== false;
+                    
+                    const displayContent = showIcons && config.customSvg ? (
                         <div className="w-4 h-4 svg-container" dangerouslySetInnerHTML={{ __html: sanitizeSVG(config.customSvg) }} />
-                    ) : config.iconName ? (
+                    ) : showIcons && config.iconName ? (
                         getIconNode(config.iconName, 'w-4 h-4')
                     ) : config.symbol ? (
                         <span className="text-xs">{config.symbol}</span>
@@ -359,15 +505,125 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onAddToCa
                     if (!displayContent) return null;
                     return (
                         <div 
-                            key={platform} 
-                            title={platform} 
+                            key={`${platform}-${index}`} 
+                            title={displayName} 
                             className={`${getBackgroundClassName(config.color)} ${config.textColor} w-7 h-7 flex items-center justify-center font-bold text-sm border-2 border-black`}
                             style={getBackgroundStyle(config.color)}
+                            data-platform-chip 
+                            role="img" 
+                            aria-label={`Platform: ${displayName}`}
                         >
                             {displayContent}
                         </div>
                     );
+                }).filter(Boolean);
+              })()}
+              {(() => {
+                // Отображаем иконки для всех остальных групп фильтров (кроме genre и platform)
+                const genreGroup = filterAssignments.genre;
+                const platformGroup = filterAssignments.platform;
+                const excludedGroups = new Set([genreGroup, platformGroup].filter(Boolean));
+                
+                const otherFilterIcons: React.ReactNode[] = [];
+                
+                // Проходим по всем группам фильтров
+                Object.entries(filterGroups).forEach(([groupId, group]) => {
+                    // Пропускаем genre и platform, они уже обработаны выше
+                    if (excludedGroups.has(groupId)) return;
+                    
+                    // Получаем значения фильтров для этой группы из product.filterValues
+                    const filterValues = product.filterValues?.[groupId] || [];
+                    if (filterValues.length === 0) return;
+                    
+                    const groupConfig = group.items;
+                    
+                    // Разделяем значения на родительские и дочерние
+                    const parentValues = new Set<string>();
+                    const childValues = new Set<string>();
+                    const parentToChildren = new Map<string, Set<string>>();
+                    
+                    filterValues.forEach((value) => {
+                        const trimmedValue = typeof value === 'string' ? value.trim() : String(value).trim();
+                        if (!trimmedValue) return;
+                        
+                        // Проверяем, является ли это дочерним значением (формат parent::child)
+                        if (trimmedValue.includes(FILTER_CHILD_DELIMITER)) {
+                            const [parentKey, childKey] = trimmedValue.split(FILTER_CHILD_DELIMITER).map(s => s.trim());
+                            if (parentKey && childKey) {
+                                childValues.add(trimmedValue);
+                                if (!parentToChildren.has(parentKey)) {
+                                    parentToChildren.set(parentKey, new Set());
+                                }
+                                parentToChildren.get(parentKey)!.add(childKey);
+                            }
+                        } else {
+                            parentValues.add(trimmedValue);
+                        }
+                    });
+                    
+                    // Для каждого значения фильтра создаем иконку
+                    // Показываем только дочерние значения, если они есть, иначе показываем родительские
+                    const valuesToShow = new Set<string>();
+                    
+                    // Добавляем все дочерние значения
+                    childValues.forEach(childValue => valuesToShow.add(childValue));
+                    
+                    // Добавляем родительские значения только если для них нет дочерних
+                    parentValues.forEach(parentValue => {
+                        if (!parentToChildren.has(parentValue)) {
+                            valuesToShow.add(parentValue);
+                        }
+                    });
+                    
+                    // Дедупликация: используем Map для отслеживания уже показанных значений
+                    const shownValues = new Map<string, string>();
+                    
+                    valuesToShow.forEach((value, valueIndex) => {
+                        // Извлекаем имя для проверки дубликатов и отображения
+                        const displayName = value.includes(FILTER_CHILD_DELIMITER) 
+                            ? value.split(FILTER_CHILD_DELIMITER)[1] 
+                            : value;
+                        
+                        // Нормализуем имя для проверки дубликатов
+                        const normalizedName = normalizeName(displayName);
+                        
+                        // Пропускаем, если уже показали это значение (глобально или в этой группе)
+                        if (shownValues.has(normalizedName) || allShownNormalizedRef.current.has(normalizedName)) return;
+                        shownValues.set(normalizedName, value);
+                        allShownNormalizedRef.current.add(normalizedName);
+                        
+                        const config = getConfigForValue(groupConfig, value);
+                        if (!config) return;
+                        
+                        const showIcons = config.showIcons !== false;
+                        
+                        const displayContent = showIcons && config.customSvg ? (
+                            <div className="w-4 h-4 svg-container" dangerouslySetInnerHTML={{ __html: sanitizeSVG(config.customSvg) }} />
+                        ) : showIcons && config.iconName ? (
+                            getIconNode(config.iconName, 'w-4 h-4')
+                        ) : config.symbol ? (
+                            <span className="text-xs">{config.symbol}</span>
+                        ) : null;
+                        
+                        if (!displayContent) return;
+                        
+                        otherFilterIcons.push(
+                            <div 
+                                key={`${groupId}-${value}-${valueIndex}`}
+                                title={displayName} 
+                                className={`${getBackgroundClassName(config.color)} ${config.textColor} w-7 h-7 flex items-center justify-center font-bold text-sm border-2 border-black`}
+                                style={getBackgroundStyle(config.color)}
+                                data-platform-chip 
+                                role="img" 
+                                aria-label={`${group.name || groupId}: ${displayName}`}
+                            >
+                                {displayContent}
+                            </div>
+                        );
+                    });
                 });
+                
+                return otherFilterIcons;
               })()}
             </div>
           </div>

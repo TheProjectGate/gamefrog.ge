@@ -6,22 +6,53 @@ import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
 import { syncDocumentPlatformState } from './platform';
 import { PlatformProvider } from './context/PlatformContext';
+import { errorLogger } from './components/ErrorLogger';
 
-// Глобальные обработчики ошибок для отладки
-// #region agent log
+// Инициализируем ErrorLogger сразу
+errorLogger.init();
+
+// Глобальные обработчики ошибок
 window.addEventListener('error', (event) => {
-  fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.tsx:11',message:'Global error caught',data:{message:event.message,filename:event.filename,lineno:event.lineno,colno:event.colno,error:event.error?.toString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // Логируем в ErrorLogger
+  errorLogger.log({
+    type: 'error',
+    message: event.message || 'Unknown error',
+    stack: event.error?.stack,
+    source: `${event.filename}:${event.lineno}:${event.colno}`,
+    details: {
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+      error: event.error?.toString(),
+    },
+  });
+  
+  // Отправляем на внешний сервис (если нужно)
+  // #region agent log
+  // Agent log disabled - service unavailable
+  // #endregion
 });
-// #endregion
 
-// #region agent log
 window.addEventListener('unhandledrejection', (event) => {
-  fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.tsx:17',message:'Unhandled promise rejection',data:{reason:event.reason?.toString(),stack:event.reason?.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // Логируем в ErrorLogger
+  errorLogger.log({
+    type: 'unhandledRejection',
+    message: event.reason?.message || String(event.reason) || 'Unhandled promise rejection',
+    stack: event.reason?.stack,
+    details: {
+      reason: event.reason?.toString(),
+    },
+  });
+  
+  // Отправляем на внешний сервис (если нужно)
+  // #region agent log
+  // Agent log disabled - service unavailable
+  // #endregion
+  
   // Предотвращаем вывод ошибки в консоль браузера по умолчанию
   // но мы уже залогировали её выше
   event.preventDefault();
 });
-// #endregion
 
 // Устанавливаем начальный язык из localStorage
 const savedLanguage = localStorage.getItem('i18nextLng');

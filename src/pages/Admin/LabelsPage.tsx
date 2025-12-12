@@ -1,7 +1,7 @@
 import React, { useState, FormEvent, useEffect, useRef } from 'react';
 import { FilterConfigItem, FilterGroup } from '../../types';
 import { PlusIcon, EditIcon, TrashIcon, CloseIcon } from '../../components/Icons';
-import { ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
+import { GripVertical } from 'lucide-react';
 import useStore from '../../store/useStore';
 import * as LucideIcons from 'lucide-react';
 import { sanitizeSVG } from '../../utils/sanitize';
@@ -171,7 +171,7 @@ const ConfigFormModal: React.FC<{
     onSave: (groupId: string, parentId: string | undefined, oldName: string, newName: string, item: FilterConfigItem) => void;
 }> = ({ group, parentId, parentLabel, item, onClose, onSave }) => {
     const [name, setName] = useState(item?.name || '');
-    const [config, setConfig] = useState<FilterConfigItem>(item?.config || { color: 'bg-gray-200', textColor: 'text-black', symbol: '', iconName: '' });
+    const [config, setConfig] = useState<FilterConfigItem>(item?.config || { color: 'bg-gray-200', textColor: 'text-black', symbol: '', iconName: '', showIcons: true });
     const [isPickerOpen, setIsPickerOpen] = useState(false);
     const [iconQuery, setIconQuery] = useState('');
 
@@ -318,18 +318,30 @@ const ConfigFormModal: React.FC<{
                         )}
                         <p className="text-xs text-black/60 mt-1">Leave empty to display only text or a symbol.</p>
                     </div>
+                    <div>
+                        <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={config.showIcons !== false}
+                                onChange={(e) => setConfig(c => ({ ...c, showIcons: e.target.checked }))}
+                                className="w-5 h-5 border-2 border-black cursor-pointer"
+                            />
+                            <span className="font-bold">Show Icons</span>
+                            <span className="text-sm text-black/60">(Display icons for this filter item)</span>
+                        </label>
+                    </div>
                     <div className="flex items-center gap-3">
                         <span 
                             className={`${getBackgroundClassName(config.color)} ${config.textColor} w-12 h-12 flex items-center justify-center font-bold text-lg border-2 border-black`}
                             style={getBackgroundStyle(config.color)}
                         >
-                            {config.customSvg ? (
+                            {config.showIcons !== false && config.customSvg ? (
                                 <div 
                                     className="w-6 h-6 svg-container" 
                                     dangerouslySetInnerHTML={{ __html: sanitizeSVG(config.customSvg) }}
                                     style={{ overflow: 'hidden' }}
                                 />
-                            ) : config.iconName ? (
+                            ) : config.showIcons !== false && config.iconName ? (
                                 getIconNode(config.iconName, 'w-6 h-6') || config.symbol
                             ) : (
                                 config.symbol
@@ -398,11 +410,9 @@ const LabelsPage: React.FC = () => {
     const {
         filterGroups,
         filterGroupOrder,
-        filterAssignments,
         addFilterGroup,
         renameFilterGroup,
         deleteFilterGroup,
-        assignFilterGroup,
         saveFilterItem,
         deleteFilterItem,
         reorderFilterItems,
@@ -470,33 +480,34 @@ const LabelsPage: React.FC = () => {
         }
     };
 
-    const handleMoveFilter = async (groupId: string, itemName: string, direction: 'up' | 'down', parentId?: string) => {
+    const handleDuplicateConfig = async (groupId: string, name: string, config: FilterConfigItem, parentId?: string) => {
         const group = filterGroups[groupId];
         if (!group) return;
-        
-        let items: string[];
+
+        // Find existing names to generate unique name
+        let existingNames: string[];
         if (parentId) {
             const parent = group.items[parentId];
-            if (!parent?.children) return;
-            items = Object.keys(parent.children);
+            existingNames = parent?.children ? Object.keys(parent.children) : [];
         } else {
-            items = Object.keys(group.items);
+            existingNames = Object.keys(group.items);
         }
-        
-        const currentIndex = items.indexOf(itemName);
-        if (currentIndex === -1) return;
-        
-        const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-        if (newIndex < 0 || newIndex >= items.length) return;
-        
-        // Swap items
-        const newOrder = [...items];
-        [newOrder[currentIndex], newOrder[newIndex]] = [newOrder[newIndex], newOrder[currentIndex]];
-        
-        await reorderFilterItems(groupId, newOrder, parentId);
+
+        // Generate unique name
+        let newName = `${name} Copy`;
+        let counter = 1;
+        while (existingNames.includes(newName)) {
+            newName = `${name} Copy ${counter}`;
+            counter++;
+        }
+
+        // Create duplicate with same config but new name
+        await saveFilterItem(groupId, '', newName, config, parentId);
     };
 
+
     const handleDragStart = (e: React.DragEvent, groupId: string, itemName: string, parentId?: string) => {
+        e.stopPropagation(); // Prevent parent drag handlers from interfering
         setDraggedItem({ groupId, itemName, parentId });
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', ''); // Required for Firefox
@@ -515,6 +526,7 @@ const LabelsPage: React.FC = () => {
 
     const handleDragOver = (e: React.DragEvent, groupId: string, itemName: string, parentId?: string) => {
         e.preventDefault();
+        e.stopPropagation(); // Prevent parent drag handlers from interfering
         e.dataTransfer.dropEffect = 'move';
         
         if (draggedItem && draggedItem.groupId === groupId && draggedItem.parentId === parentId && draggedItem.itemName !== itemName) {
@@ -528,6 +540,7 @@ const LabelsPage: React.FC = () => {
 
     const handleDrop = async (e: React.DragEvent, groupId: string, itemName: string, parentId?: string) => {
         e.preventDefault();
+        e.stopPropagation(); // Prevent parent drag handlers from interfering
         setDragOverItem(null);
         
         if (!draggedItem || draggedItem.groupId !== groupId || draggedItem.parentId !== parentId || draggedItem.itemName === itemName) {
@@ -639,8 +652,6 @@ const LabelsPage: React.FC = () => {
     const renderGroup = (group: FilterGroup) => {
         const config = group.items;
         const isCollapsed = collapsedGroups[group.id];
-        const isGenreGroup = filterAssignments.genre === group.id;
-        const isPlatformGroup = filterAssignments.platform === group.id;
 
         const isGroupDragging = draggedGroup === group.id;
         const isGroupDragOver = dragOverGroup === group.id;
@@ -657,7 +668,7 @@ const LabelsPage: React.FC = () => {
             onDrop={(e) => handleGroupDrop(e, group.id)}
         >
             <div className="flex flex-col gap-3 border-b-4 border-black p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3">
                         <div 
                             className="cursor-grab active:cursor-grabbing p-1 text-black/40 hover:text-black"
@@ -673,22 +684,8 @@ const LabelsPage: React.FC = () => {
                             {isCollapsed ? 'Expand' : 'Collapse'}
                         </button>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase">
-                        <span className={`px-2 py-1 border-2 border-black ${isGenreGroup ? 'bg-[#FFD700]' : 'bg-white'}`}>
-                            {isGenreGroup ? 'Assigned: Genres' : 'Not Genres'}
-                        </span>
-                        <span className={`px-2 py-1 border-2 border-black ${isPlatformGroup ? 'bg-[#FFD700]' : 'bg-white'}`}>
-                            {isPlatformGroup ? 'Assigned: Platforms' : 'Not Platforms'}
-                        </span>
-                    </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <button onClick={() => assignFilterGroup('genre', group.id)} className="border-2 border-black px-3 py-1 font-bold text-xs bg-white hover:bg-gray-100">
-                        Use for Genres
-                    </button>
-                    <button onClick={() => assignFilterGroup('platform', group.id)} className="border-2 border-black px-3 py-1 font-bold text-xs bg-white hover:bg-gray-100">
-                        Use for Platforms
-                    </button>
                     <button onClick={() => handleOpenGroupModal('rename', group)} className="border-2 border-black px-3 py-1 font-bold text-xs bg-white hover:bg-gray-100">
                         Rename
                     </button>
@@ -696,7 +693,7 @@ const LabelsPage: React.FC = () => {
                         onClick={() => {
                             if (window.confirm(`Delete group "${group.label}"?`)) deleteFilterGroup(group.id);
                         }}
-                        disabled={['genre', 'platform'].includes(group.id) || isGenreGroup || isPlatformGroup}
+                        disabled={['genre', 'platform'].includes(group.id)}
                         className="border-2 border-black px-3 py-1 font-bold text-xs bg-white hover:bg-red-500 hover:text-white disabled:opacity-40 disabled:pointer-events-none"
                     >
                         Delete
@@ -711,8 +708,6 @@ const LabelsPage: React.FC = () => {
                     {Object.keys(config).length > 0 ? (
                         Object.entries(config).map(([name, itemConfig], index, array) => {
                             const children = itemConfig.children ? Object.entries(itemConfig.children) : [];
-                            const canMoveUp = index > 0;
-                            const canMoveDown = index < array.length - 1;
                             const isDragging = draggedItem?.groupId === group.id && draggedItem?.itemName === name && !draggedItem?.parentId;
                             const isDragOver = dragOverItem?.groupId === group.id && dragOverItem?.itemName === name && !dragOverItem?.parentId;
                             
@@ -721,37 +716,38 @@ const LabelsPage: React.FC = () => {
                                     key={name} 
                                     className={`border-4 border-black bg-white p-4 space-y-4 transition-all ${isDragging ? 'opacity-50' : ''} ${isDragOver ? 'border-[#FFD700] bg-yellow-50' : ''}`}
                                     draggable
-                                    onDragStart={(e) => handleDragStart(e, group.id, name)}
+                                    onDragStart={(e) => {
+                                        // Only allow dragging if clicking on the main filter item itself, not on child elements
+                                        if ((e.target as HTMLElement).closest('.sub-filter-container')) {
+                                            e.preventDefault();
+                                            return;
+                                        }
+                                        handleDragStart(e, group.id, name);
+                                    }}
                                     onDragEnd={handleDragEnd}
-                                    onDragOver={(e) => handleDragOver(e, group.id, name)}
+                                    onDragOver={(e) => {
+                                        // Don't handle drag over if it's a sub-filter being dragged
+                                        if (draggedItem?.parentId) {
+                                            return;
+                                        }
+                                        handleDragOver(e, group.id, name);
+                                    }}
                                     onDragLeave={handleDragLeave}
-                                    onDrop={(e) => handleDrop(e, group.id, name)}
+                                    onDrop={(e) => {
+                                        // Don't handle drop if it's a sub-filter being dropped
+                                        if (draggedItem?.parentId) {
+                                            return;
+                                        }
+                                        handleDrop(e, group.id, name);
+                                    }}
                                 >
                                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                                         <div className="flex items-center gap-4">
-                                            <div className="flex flex-col gap-1">
-                                                <div 
-                                                    className="cursor-grab active:cursor-grabbing p-1 text-black/40 hover:text-black"
-                                                    title="Drag to reorder"
-                                                >
-                                                    <GripVertical className="w-5 h-5" />
-                                                </div>
-                                                <button
-                                                    onClick={() => handleMoveFilter(group.id, name, 'up')}
-                                                    disabled={!canMoveUp}
-                                                    className="p-1 border-2 border-black bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-                                                    title="Move up"
-                                                >
-                                                    <ChevronUp className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleMoveFilter(group.id, name, 'down')}
-                                                    disabled={!canMoveDown}
-                                                    className="p-1 border-2 border-black bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-                                                    title="Move down"
-                                                >
-                                                    <ChevronDown className="w-4 h-4" />
-                                                </button>
+                                            <div 
+                                                className="cursor-grab active:cursor-grabbing p-1 text-black/40 hover:text-black"
+                                                title="Drag to reorder"
+                                            >
+                                                <GripVertical className="w-5 h-5" />
                                             </div>
                                             <span 
                                                 className={`${getBackgroundClassName(itemConfig.color)} ${itemConfig.textColor} w-12 h-12 flex items-center justify-center font-bold text-lg border-2 border-black`}
@@ -788,28 +784,25 @@ const LabelsPage: React.FC = () => {
                                         <div className="border-t-2 border-dashed border-black/20 pt-3 space-y-2">
                                             <p className="text-xs font-bold uppercase tracking-[0.3em] text-black/60">Sub Filters</p>
                                             {children.map(([childName, childConfig], childIndex) => {
-                                                const canMoveUp = childIndex > 0;
-                                                const canMoveDown = childIndex < children.length - 1;
+                                                const isChildDragging = draggedItem?.groupId === group.id && draggedItem?.itemName === childName && draggedItem?.parentId === name;
+                                                const isChildDragOver = dragOverItem?.groupId === group.id && dragOverItem?.itemName === childName && dragOverItem?.parentId === name;
                                                 return (
-                                                <div key={childName} className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border border-dashed border-black/20 p-2">
+                                                <div 
+                                                    key={childName} 
+                                                    className={`sub-filter-container flex flex-col gap-2 md:flex-row md:items-center md:justify-between border border-dashed border-black/20 p-2 transition-all ${isChildDragging ? 'opacity-50' : ''} ${isChildDragOver ? 'border-[#FFD700] bg-yellow-50' : ''}`}
+                                                    draggable
+                                                    onDragStart={(e) => handleDragStart(e, group.id, childName, name)}
+                                                    onDragEnd={handleDragEnd}
+                                                    onDragOver={(e) => handleDragOver(e, group.id, childName, name)}
+                                                    onDragLeave={handleDragLeave}
+                                                    onDrop={(e) => handleDrop(e, group.id, childName, name)}
+                                                >
                                                     <div className="flex items-center gap-3">
-                                                        <div className="flex flex-col gap-1">
-                                                            <button
-                                                                onClick={() => handleMoveFilter(group.id, childName, 'up', name)}
-                                                                disabled={!canMoveUp}
-                                                                className="p-1 border-2 border-black bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-                                                                title="Move up"
-                                                            >
-                                                                <ChevronUp className="w-3 h-3" />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleMoveFilter(group.id, childName, 'down', name)}
-                                                                disabled={!canMoveDown}
-                                                                className="p-1 border-2 border-black bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-                                                                title="Move down"
-                                                            >
-                                                                <ChevronDown className="w-3 h-3" />
-                                                            </button>
+                                                        <div 
+                                                            className="cursor-grab active:cursor-grabbing p-1 text-black/40 hover:text-black"
+                                                            title="Drag to reorder"
+                                                        >
+                                                            <GripVertical className="w-4 h-4" />
                                                         </div>
                                                         <span 
                                                             className={`${getBackgroundClassName(childConfig.color)} ${childConfig.textColor} w-10 h-10 flex items-center justify-center font-bold text-sm border-2 border-black`}
@@ -833,6 +826,9 @@ const LabelsPage: React.FC = () => {
                                                     <div className="flex gap-2">
                                                         <button onClick={() => handleOpenConfigModal(group, { name: childName, config: childConfig }, { parentId: name, parentLabel: name })} className="p-2 bg-white text-black border-2 border-black hover:bg-gray-200 flex items-center gap-2 text-xs font-bold">
                                                             <EditIcon className="w-4 h-4" /> Edit
+                                                        </button>
+                                                        <button onClick={() => handleDuplicateConfig(group.id, childName, childConfig, name)} className="p-2 bg-white text-black border-2 border-black hover:bg-blue-500 hover:text-white flex items-center gap-2 text-xs font-bold">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2h8c1.1 0 2 .9 2 2"/></svg> Duplicate
                                                         </button>
                                                         <button onClick={() => handleDeleteConfig(group.id, childName, name)} className="p-2 bg-white text-black border-2 border-black hover:bg-red-500 hover:text-white flex items-center gap-2 text-xs font-bold">
                                                             <TrashIcon className="w-4 h-4" /> Delete

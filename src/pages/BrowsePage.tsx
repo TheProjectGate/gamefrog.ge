@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Product } from '../types';
 import FilterSidebar from '../components/FilterSidebar';
 import ProductCard from '../components/ProductCard';
-import ProductRow from '../components/ProductRow';
 import { FilterIcon, GridIcon, ListIcon, CloseIcon } from '../components/Icons';
 import useStore, { FILTER_CHILD_DELIMITER } from '../store/useStore';
 
@@ -131,8 +130,7 @@ const BrowsePage: React.FC = () => {
                 return (
                     <div
                         key={product.id}
-                        className={`cursor-pointer w-full ${isBundle ? 'sm:col-span-2' : ''}`}
-                        onClick={() => openProductModal(product)}
+                        className={`w-full ${isBundle ? 'sm:col-span-2' : ''}`}
                     >
                         <ProductCard
                             product={product}
@@ -140,6 +138,7 @@ const BrowsePage: React.FC = () => {
                             onToggleWishlist={toggleWishlist}
                             genreConfig={genreConfig}
                             platformConfig={platformConfig}
+                            onProductClick={openProductModal}
                         />
                     </div>
                 );
@@ -430,25 +429,22 @@ const BrowsePage: React.FC = () => {
                               isMobileView ? (
                                 <div className="grid grid-cols-2 gap-4">
                                   {filteredProducts.map(product => (
-                                    <div
+                                    <ProductCard
                                       key={product.id}
-                                      className="cursor-pointer col-span-2"
-                                      onClick={() => openProductModal(product)}
-                                    >
-                                      <ProductCard
-                                        product={product}
-                                        isInWishlist={wishlist.includes(product.id)}
-                                        onToggleWishlist={toggleWishlist}
-                                        genreConfig={genreConfig}
-                                        platformConfig={platformConfig}
-                                      />
-                                    </div>
+                                      product={product}
+                                      isInWishlist={wishlist.includes(product.id)}
+                                      onToggleWishlist={toggleWishlist}
+                                      genreConfig={genreConfig}
+                                      platformConfig={platformConfig}
+                                      onProductClick={openProductModal}
+                                      variant="row"
+                                    />
                                   ))}
                                 </div>
                               ) : (
                                 <div className="space-y-6">
                                   {filteredProducts.map(product => (
-                                    <ProductRow
+                                    <ProductCard
                                       key={product.id}
                                       product={product}
                                       onProductClick={openProductModal}
@@ -456,6 +452,7 @@ const BrowsePage: React.FC = () => {
                                       onToggleWishlist={toggleWishlist}
                                       genreConfig={genreConfig}
                                       platformConfig={platformConfig}
+                                      variant="row"
                                     />
                                   ))}
                                 </div>

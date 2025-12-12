@@ -402,160 +402,58 @@ const SettingsPage: React.FC = () => {
 
             {isBadgeColorsSectionOpen && (
               <div className="p-4 border-t-4 border-black bg-white">
-                <p className="text-sm text-gray-700 mb-4">
-                  Customize indicator colors for different message types. Badges will cycle through colors if multiple types are unread.
+                <p className="text-xs text-gray-600 mb-3">
+                  Customize badge colors for different message types
                 </p>
 
-                <div className="space-y-4">
-                  {/* General Messages */}
-                  <div className="bg-white border-4 border-black">
-                    <div className="flex flex-col gap-3 border-b-4 border-black p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-3">
-                        <span 
-                          className={`w-10 h-10 rounded-full border-2 border-black ${
-                            badgeColors.general === 'red' ? 'bg-red-600' :
-                            badgeColors.general === 'green' ? 'bg-green-600' :
-                            badgeColors.general === 'blue' ? 'bg-blue-600' :
-                            badgeColors.general === 'yellow' ? 'bg-yellow-500' :
-                            badgeColors.general === 'purple' ? 'bg-purple-600' :
-                            badgeColors.general === 'pink' ? 'bg-pink-500' :
-                            badgeColors.general === 'orange' ? 'bg-orange-500' :
-                            badgeColors.general === 'cyan' ? 'bg-cyan-500' : 'bg-red-600'
-                          }`}
-                        />
-                        <div>
-                          <h3 className="text-xl sm:text-2xl font-display uppercase">General Messages</h3>
-                          <p className="text-xs font-bold uppercase text-gray-600">Current: {badgeColors.general}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
-                        {(['red', 'green', 'blue', 'yellow', 'purple', 'pink', 'orange', 'cyan'] as const).map(color => (
-                          <button
-                            key={color}
-                            onClick={() => setBadgeColor('general', color)}
-                            className={`w-12 h-12 rounded-full border-2 transition-all ${
-                              badgeColors.general === color 
-                                ? 'border-black ring-2 ring-offset-2 ring-black scale-110' 
-                                : 'border-gray-300 hover:border-black'
-                            } ${
-                              color === 'red' ? 'bg-red-600' :
-                              color === 'green' ? 'bg-green-600' :
-                              color === 'blue' ? 'bg-blue-600' :
-                              color === 'yellow' ? 'bg-yellow-500' :
-                              color === 'purple' ? 'bg-purple-600' :
-                              color === 'pink' ? 'bg-pink-500' :
-                              color === 'orange' ? 'bg-orange-500' :
-                              'bg-cyan-500'
-                            } hover:scale-110`}
-                            title={color}
-                            aria-label={`Set General Messages to ${color}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  {([
+                    { type: 'general' as const, label: 'General Messages' },
+                    { type: 'order' as const, label: 'Order Receipts' },
+                    { type: 'wishlist' as const, label: 'Wishlist Alerts' }
+                  ]).map(({ type, label }) => {
+                    const currentColor = badgeColors[type];
+                    const getColorClass = (color: string) => {
+                      const colorMap: Record<string, string> = {
+                        red: 'bg-red-600',
+                        green: 'bg-green-600',
+                        blue: 'bg-blue-600',
+                        yellow: 'bg-yellow-500',
+                        purple: 'bg-purple-600',
+                        pink: 'bg-pink-500',
+                        orange: 'bg-orange-500',
+                        cyan: 'bg-cyan-500'
+                      };
+                      return colorMap[color] || 'bg-gray-400';
+                    };
 
-                  {/* Order/Receipt Messages */}
-                  <div className="bg-white border-4 border-black">
-                    <div className="flex flex-col gap-3 border-b-4 border-black p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-3">
-                        <span 
-                          className={`w-10 h-10 rounded-full border-2 border-black ${
-                            badgeColors.order === 'red' ? 'bg-red-600' :
-                            badgeColors.order === 'green' ? 'bg-green-600' :
-                            badgeColors.order === 'blue' ? 'bg-blue-600' :
-                            badgeColors.order === 'yellow' ? 'bg-yellow-500' :
-                            badgeColors.order === 'purple' ? 'bg-purple-600' :
-                            badgeColors.order === 'pink' ? 'bg-pink-500' :
-                            badgeColors.order === 'orange' ? 'bg-orange-500' :
-                            badgeColors.order === 'cyan' ? 'bg-cyan-500' : 'bg-green-600'
-                          }`}
-                        />
-                        <div>
-                          <h3 className="text-xl sm:text-2xl font-display uppercase">Order Receipts</h3>
-                          <p className="text-xs font-bold uppercase text-gray-600">Current: {badgeColors.order}</p>
+                    return (
+                      <div key={type} className="flex items-center gap-3 p-2 border-2 border-gray-200 hover:border-black transition-colors">
+                        <div className="flex items-center gap-2 min-w-[140px]">
+                          <span 
+                            className={`w-6 h-6 rounded-full border-2 border-black ${getColorClass(currentColor)}`}
+                            title={currentColor}
+                          />
+                          <span className="text-sm font-bold uppercase">{label}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-1 justify-end">
+                          {(['red', 'green', 'blue', 'yellow', 'purple', 'pink', 'orange', 'cyan'] as const).map(color => (
+                            <button
+                              key={color}
+                              onClick={() => setBadgeColor(type, color)}
+                              className={`w-7 h-7 rounded-full border-2 transition-all ${
+                                currentColor === color 
+                                  ? 'border-black ring-1 ring-offset-1 ring-black scale-110' 
+                                  : 'border-gray-300 hover:border-black'
+                              } ${getColorClass(color)} hover:scale-110`}
+                              title={color}
+                              aria-label={`Set ${label} to ${color}`}
+                            />
+                          ))}
                         </div>
                       </div>
-                    </div>
-                    <div className="p-4">
-                      <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
-                        {(['red', 'green', 'blue', 'yellow', 'purple', 'pink', 'orange', 'cyan'] as const).map(color => (
-                          <button
-                            key={color}
-                            onClick={() => setBadgeColor('order', color)}
-                            className={`w-12 h-12 rounded-full border-2 transition-all ${
-                              badgeColors.order === color 
-                                ? 'border-black ring-2 ring-offset-2 ring-black scale-110' 
-                                : 'border-gray-300 hover:border-black'
-                            } ${
-                              color === 'red' ? 'bg-red-600' :
-                              color === 'green' ? 'bg-green-600' :
-                              color === 'blue' ? 'bg-blue-600' :
-                              color === 'yellow' ? 'bg-yellow-500' :
-                              color === 'purple' ? 'bg-purple-600' :
-                              color === 'pink' ? 'bg-pink-500' :
-                              color === 'orange' ? 'bg-orange-500' :
-                              'bg-cyan-500'
-                            } hover:scale-110`}
-                            title={color}
-                            aria-label={`Set Order Receipts to ${color}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Wishlist Messages */}
-                  <div className="bg-white border-4 border-black">
-                    <div className="flex flex-col gap-3 border-b-4 border-black p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-3">
-                        <span 
-                          className={`w-10 h-10 rounded-full border-2 border-black ${
-                            badgeColors.wishlist === 'red' ? 'bg-red-600' :
-                            badgeColors.wishlist === 'green' ? 'bg-green-600' :
-                            badgeColors.wishlist === 'blue' ? 'bg-blue-600' :
-                            badgeColors.wishlist === 'yellow' ? 'bg-yellow-500' :
-                            badgeColors.wishlist === 'purple' ? 'bg-purple-600' :
-                            badgeColors.wishlist === 'pink' ? 'bg-pink-500' :
-                            badgeColors.wishlist === 'orange' ? 'bg-orange-500' :
-                            badgeColors.wishlist === 'cyan' ? 'bg-cyan-500' : 'bg-pink-500'
-                          }`}
-                        />
-                        <div>
-                          <h3 className="text-xl sm:text-2xl font-display uppercase">Wishlist Alerts</h3>
-                          <p className="text-xs font-bold uppercase text-gray-600">Current: {badgeColors.wishlist}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
-                        {(['red', 'green', 'blue', 'yellow', 'purple', 'pink', 'orange', 'cyan'] as const).map(color => (
-                          <button
-                            key={color}
-                            onClick={() => setBadgeColor('wishlist', color)}
-                            className={`w-12 h-12 rounded-full border-2 transition-all ${
-                              badgeColors.wishlist === color 
-                                ? 'border-black ring-2 ring-offset-2 ring-black scale-110' 
-                                : 'border-gray-300 hover:border-black'
-                            } ${
-                              color === 'red' ? 'bg-red-600' :
-                              color === 'green' ? 'bg-green-600' :
-                              color === 'blue' ? 'bg-blue-600' :
-                              color === 'yellow' ? 'bg-yellow-500' :
-                              color === 'purple' ? 'bg-purple-600' :
-                              color === 'pink' ? 'bg-pink-500' :
-                              color === 'orange' ? 'bg-orange-500' :
-                              'bg-cyan-500'
-                            } hover:scale-110`}
-                            title={color}
-                            aria-label={`Set Wishlist Alerts to ${color}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

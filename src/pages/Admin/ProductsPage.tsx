@@ -10,6 +10,7 @@ import { GripVertical } from 'lucide-react';
 import { uploadImage } from '../../api/upload';
 import { fetchOffers, createOffer, updateOffer, deleteOffer, LimitedTimeOffer, CreateOfferData, ShowFrequency } from '../../api/offers';
 import { useTranslation } from 'react-i18next';
+import LabelsPage from './LabelsPage';
 
 const availableTags = ['bestseller', 'new', 'sale', 'bundle', 'retro', 'merch'];
 
@@ -452,6 +453,39 @@ const ProductFormModal: React.FC<{
     const [expandedChildParents, setExpandedChildParents] = useState<Record<string, boolean>>({});
     const [expandedFilterGroups, setExpandedFilterGroups] = useState<Record<string, boolean>>({});
 
+    // Auto-expand parent items that have children (for better UX)
+    useEffect(() => {
+        if (!filterGroups) return;
+        const expanded: Record<string, boolean> = {};
+        
+        filterGroupOrder.forEach(groupId => {
+            const group = filterGroups[groupId];
+            if (!group) return;
+            
+            // If editing a product, check for selected children
+            const filterValues = product?.filterValues || {};
+            const selections = filterValues[groupId] || [];
+            
+            Object.entries(group.items).forEach(([itemName, itemConfig]) => {
+                if (itemConfig.children && Object.keys(itemConfig.children).length > 0) {
+                    const parentKey = `${groupId}:${itemName}`;
+                    // Expand if editing and has selected children, or always expand for new products
+                    const childNames = Object.keys(itemConfig.children);
+                    const childKeys = childNames.map(child => `${itemName}${FILTER_CHILD_DELIMITER}${child}`);
+                    const hasSelectedChildren = childKeys.some(key => selections.includes(key));
+                    
+                    // Always expand if creating new product, or if editing and has selected children
+                    if (!product || hasSelectedChildren) {
+                        expanded[parentKey] = true;
+                    }
+                }
+            });
+        });
+        
+        // Always update state, even if empty, to ensure proper initialization
+        setExpandedChildParents(expanded);
+    }, [product, filterGroups, filterGroupOrder]);
+
     const toggleChildExpansion = (groupId: string, parentId: string) => {
         const key = `${groupId}:${parentId}`;
         setExpandedChildParents(prev => ({ ...prev, [key]: !prev[key] }));
@@ -505,13 +539,19 @@ const ProductFormModal: React.FC<{
         return (
             <div className="space-y-3">
                 {items.map(([itemName, itemConfig]) => {
-                    const childNames = itemConfig.children ? Object.keys(itemConfig.children) : [];
+                    // Ensure children is properly checked - handle both object and undefined cases
+                    const childrenObj = itemConfig?.children;
+                    const childNames = childrenObj && typeof childrenObj === 'object' && Object.keys(childrenObj).length > 0 
+                        ? Object.keys(childrenObj) 
+                        : [];
                     const parentSelected = selections.includes(itemName);
                     const childKeys = childNames.map(child => `${itemName}${FILTER_CHILD_DELIMITER}${child}`);
                     const selectedChildren = new Set(childKeys.filter(key => selections.includes(key)));
                     const isPartial = !parentSelected && selectedChildren.size > 0;
                     const parentKey = `${group.id}:${itemName}`;
-                    const isExpanded = expandedChildParents[parentKey] ?? false;
+                    // Default to expanded if creating new product and has children, otherwise use state
+                    const defaultExpanded = !product && childNames.length > 0;
+                    const isExpanded = expandedChildParents[parentKey] ?? defaultExpanded;
                     return (
                         <div key={itemName} className="border border-dashed border-black/20 p-3 bg-white space-y-2">
                             <div className="flex items-center justify-between gap-2">
@@ -661,13 +701,17 @@ const ProductFormModal: React.FC<{
             const current = new Set(prev.filterValues?.[groupId] || []);
             const childKeys = childNames.map(child => `${parentId}${FILTER_CHILD_DELIMITER}${child}`);
             const hadParent = current.has(parentId);
+            
             if (hadParent) {
+                // Удаляем только родительский фильтр, дочерние остаются
                 current.delete(parentId);
-                childKeys.forEach(key => current.delete(key));
             } else {
+                // Добавляем только родительский фильтр, дочерние НЕ добавляются автоматически
                 current.add(parentId);
-                childKeys.forEach(key => current.add(key));
+                // Удаляем все дочерние фильтры этого родителя, если они были выбраны
+                childKeys.forEach(key => current.delete(key));
             }
+            
             const nextFilterValues = { ...(prev.filterValues || {}) };
             const updated = Array.from(current);
             if (updated.length > 0) {
@@ -675,17 +719,9 @@ const ProductFormModal: React.FC<{
             } else {
                 delete nextFilterValues[groupId];
             }
-            let nextState: Omit<Product, 'id'> = { ...prev, filterValues: nextFilterValues };
-            if (groupId === filterAssignments.platform) {
-                const shouldHaveParent = current.has(parentId) || childKeys.some(key => current.has(key));
-                const existingPlatforms = prev.platforms || [];
-                nextState.platforms = shouldHaveParent
-                    ? existingPlatforms.includes(parentId)
-                        ? existingPlatforms
-                        : [...existingPlatforms, parentId]
-                    : existingPlatforms.filter(p => p !== parentId);
-            }
-            return nextState;
+            
+            // НЕ синхронизируем с product.platforms автоматически - это должно быть отдельным выбором
+            return { ...prev, filterValues: nextFilterValues };
         });
     };
 
@@ -693,19 +729,20 @@ const ProductFormModal: React.FC<{
         setFormData(prev => {
             const current = new Set(prev.filterValues?.[groupId] || []);
             const childKey = `${parentId}${FILTER_CHILD_DELIMITER}${childId}`;
-            const childKeys = childNames.map(child => `${parentId}${FILTER_CHILD_DELIMITER}${child}`);
             const hadChild = current.has(childKey);
+            
             if (hadChild) {
+                // Удаляем только этот дочерний фильтр
                 current.delete(childKey);
             } else {
+                // Добавляем только этот дочерний фильтр
                 current.add(childKey);
             }
+            
+            // НЕ добавляем родительский фильтр автоматически, даже если все дочерние выбраны
+            // Пользователь должен явно выбрать родительский, если хочет
             current.delete(parentId);
-            const selectedChildren = childKeys.filter(key => current.has(key));
-            const allChildrenSelected = childKeys.length > 0 && selectedChildren.length === childKeys.length;
-            if (allChildrenSelected) {
-                current.add(parentId);
-            }
+            
             const nextFilterValues = { ...(prev.filterValues || {}) };
             const updated = Array.from(current);
             if (updated.length > 0) {
@@ -713,17 +750,9 @@ const ProductFormModal: React.FC<{
             } else {
                 delete nextFilterValues[groupId];
             }
-            let nextState: Omit<Product, 'id'> = { ...prev, filterValues: nextFilterValues };
-            if (groupId === filterAssignments.platform) {
-                const existingPlatforms = prev.platforms || [];
-                const shouldHaveParent = current.has(parentId) || childKeys.some(key => current.has(key));
-                nextState.platforms = shouldHaveParent
-                    ? existingPlatforms.includes(parentId)
-                        ? existingPlatforms
-                        : [...existingPlatforms, parentId]
-                    : existingPlatforms.filter(p => p !== parentId);
-            }
-            return nextState;
+            
+            // НЕ синхронизируем с product.platforms автоматически - это должно быть отдельным выбором
+            return { ...prev, filterValues: nextFilterValues };
         });
     };
 
@@ -972,42 +1001,50 @@ const ProductFormModal: React.FC<{
                         {filterGroupOrder.map(groupId => {
                             const group = filterGroups[groupId];
                             if (!group) return null;
-                            const items = Object.keys(group.items);
                             const description = groupId === filterAssignments.genre ? 'Select one or more genres' : undefined;
-                            const content = groupId === filterAssignments.genre ? (
-                                items.length ? (
-                                    <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                                        {items.map(itemName => (
-                                            <label key={itemName} htmlFor={`product-genre-${itemName}`} className="flex items-center gap-2 text-sm font-semibold">
-                                                <input
-                                                    id={`product-genre-${itemName}`}
-                                                    name={`product-genre-${itemName}`}
-                                                    type="checkbox"
-                                                    value={itemName}
-                                                    checked={Array.isArray(formData.genre) ? formData.genre.includes(itemName) : false}
-                                                    onChange={(e) => {
-                                                        const currentGenres = Array.isArray(formData.genre) ? formData.genre : [];
-                                                        if (e.target.checked) {
-                                                            setFormData(prev => ({ ...prev, genre: [...currentGenres, itemName] }));
-                                                        } else {
-                                                            setFormData(prev => ({ ...prev, genre: currentGenres.filter(g => g !== itemName) }));
-                                                        }
-                                                    }}
-                                                />
-                                                {itemName}
-                                            </label>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-xs font-semibold text-black/60">No values yet. Add them in Labels & Filters.</p>
-                                )
-                            ) : (
-                                renderParentChildGroup(
-                                    group,
-                                    formData.filterValues?.[group.id] || [],
-                                    (parentId, childNames) => toggleParentFilterValue(group.id, parentId, childNames),
-                                    (parentId, childId, childNames) => toggleChildFilterValue(group.id, parentId, childId, childNames)
-                                )
+                            // Use renderParentChildGroup for all groups to show sub-filters
+                            // For genre group, merge filterValues with genre array
+                            const genreSelections = groupId === filterAssignments.genre 
+                                ? (() => {
+                                    const genreArray = Array.isArray(formData.genre) ? formData.genre : [];
+                                    const filterVals = formData.filterValues?.[groupId] || [];
+                                    // Combine: genre array items + filterValues items (including child keys)
+                                    const combined = new Set([...genreArray, ...filterVals]);
+                                    return Array.from(combined);
+                                })()
+                                : (formData.filterValues?.[group.id] || []);
+                            
+                            const content = renderParentChildGroup(
+                                group,
+                                genreSelections,
+                                (parentId, childNames) => {
+                                    toggleParentFilterValue(group.id, parentId, childNames);
+                                    // Синхронизируем с formData.genre только для обратной совместимости
+                                    // НЕ добавляем автоматически дочерние фильтры
+                                    if (groupId === filterAssignments.genre) {
+                                        setFormData(prev => {
+                                            const currentGenres = Array.isArray(prev.genre) ? prev.genre : [];
+                                            const filterVals = prev.filterValues?.[groupId] || [];
+                                            const hasParentInFilterVals = filterVals.includes(parentId);
+                                            
+                                            if (hasParentInFilterVals) {
+                                                // Добавляем родительский в genre только если он выбран в filterValues
+                                                if (!currentGenres.includes(parentId)) {
+                                                    return { ...prev, genre: [...currentGenres, parentId] };
+                                                }
+                                            } else {
+                                                // Удаляем родительский из genre если он не выбран в filterValues
+                                                return { ...prev, genre: currentGenres.filter(g => g !== parentId) };
+                                            }
+                                            return prev;
+                                        });
+                                    }
+                                },
+                                (parentId, childId, childNames) => {
+                                    toggleChildFilterValue(group.id, parentId, childId, childNames);
+                                    // НЕ синхронизируем с formData.genre для дочерних фильтров
+                                    // Дочерние фильтры хранятся только в filterValues
+                                }
                             );
                             return renderFilterAccordion(group, content, description);
                         })}
@@ -1581,14 +1618,14 @@ const OfferFormModal: React.FC<{
     );
 };
 
-type ProductTab = 'homepage' | 'products' | 'bundles' | 'offers';
+type ProductTab = 'homepage' | 'products' | 'bundles' | 'offers' | 'labels';
 
 const ProductsPage: React.FC = () => {
     const { products, addProduct, updateProduct, deleteProduct, setToast } = useStore();
     // Load activeTab from localStorage or default to 'homepage'
     const [activeTab, setActiveTab] = useState<ProductTab>(() => {
         const saved = localStorage.getItem('productsPageActiveTab');
-        return (saved && ['homepage', 'products', 'bundles', 'offers'].includes(saved))
+        return (saved && ['homepage', 'products', 'bundles', 'offers', 'labels'].includes(saved))
             ? (saved as ProductTab)
             : 'homepage';
     });
@@ -1607,7 +1644,16 @@ const ProductsPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterGenre, setFilterGenre] = useState<string>('all');
     const [filterTag, setFilterTag] = useState<string>('all');
-    const [currentPage, setCurrentPage] = useState(1);
+    // Сохраняем текущую страницу в localStorage и восстанавливаем при загрузке
+    const [currentPage, setCurrentPage] = useState(() => {
+        const saved = localStorage.getItem('productsPageCurrentPage');
+        return saved ? parseInt(saved, 10) : 1;
+    });
+    
+    // Сохраняем страницу в localStorage при изменении
+    useEffect(() => {
+        localStorage.setItem('productsPageCurrentPage', currentPage.toString());
+    }, [currentPage]);
     const [selectedProducts, setSelectedProducts] = useState<Set<number>>(new Set());
     const [confirmDialog, setConfirmDialog] = useState<{
         isOpen: boolean;
@@ -1886,11 +1932,33 @@ const ProductsPage: React.FC = () => {
 
     const handleSaveProduct = async (productData: Product | Omit<Product, 'id'>) => {
         try {
+            // Сохраняем текущую страницу перед обновлением
+            const savedPage = currentPage;
+            
             if ('id' in productData) {
                 await updateProduct(productData);
             } else {
                 await addProduct(productData);
+                // При добавлении нового продукта переходим на первую страницу
+                setCurrentPage(1);
+                handleCloseProductModal();
+                return;
             }
+            
+            // Восстанавливаем страницу после обновления существующего продукта
+            // Используем requestAnimationFrame для гарантии, что filteredProducts обновлен
+            requestAnimationFrame(() => {
+                const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+                if (savedPage <= totalPages && totalPages > 0) {
+                    setCurrentPage(savedPage);
+                } else if (totalPages > 0) {
+                    // Если сохраненная страница больше доступных, переходим на последнюю
+                    setCurrentPage(totalPages);
+                } else {
+                    setCurrentPage(1);
+                }
+            });
+            
             handleCloseProductModal();
         } catch (error) {
             // Error is already handled in store
@@ -1910,11 +1978,32 @@ const ProductsPage: React.FC = () => {
 
     const handleSaveBundle = async (bundleData: Product | Omit<Product, 'id'>) => {
         try {
+            // Сохраняем текущую страницу перед обновлением
+            const savedPage = currentPage;
+            
             if ('id' in bundleData) {
                 await updateProduct(bundleData);
             } else {
                 await addProduct(bundleData);
+                // При добавлении нового bundle переходим на первую страницу
+                setCurrentPage(1);
+                return;
             }
+            
+            // Восстанавливаем страницу после обновления существующего bundle
+            // Используем requestAnimationFrame для гарантии, что filteredProducts обновлен
+            requestAnimationFrame(() => {
+                const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+                if (savedPage <= totalPages && totalPages > 0) {
+                    setCurrentPage(savedPage);
+                } else if (totalPages > 0) {
+                    // Если сохраненная страница больше доступных, переходим на последнюю
+                    setCurrentPage(totalPages);
+                } else {
+                    setCurrentPage(1);
+                }
+            });
+            
             handleCloseBundleModal();
         } catch (error) {
             // Error is already handled in store
@@ -1975,6 +2064,9 @@ const ProductsPage: React.FC = () => {
 
     const confirmDelete = async () => {
         try {
+            // Сохраняем текущую страницу перед удалением
+            const savedPage = currentPage;
+            
             if (confirmDialog.action === 'bulkDelete' && confirmDialog.productIds) {
                 // Delete all selected products sequentially
                 for (const id of confirmDialog.productIds) {
@@ -1984,6 +2076,20 @@ const ProductsPage: React.FC = () => {
             } else if (confirmDialog.productId) {
                 await deleteProduct(confirmDialog.productId);
             }
+            
+            // Восстанавливаем страницу после удаления
+            // Используем requestAnimationFrame для гарантии, что filteredProducts обновлен
+            requestAnimationFrame(() => {
+                const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+                if (savedPage <= totalPages && totalPages > 0) {
+                    setCurrentPage(savedPage);
+                } else if (totalPages > 0) {
+                    // Если сохраненная страница больше доступных, переходим на последнюю
+                    setCurrentPage(totalPages);
+                } else {
+                    setCurrentPage(1);
+                }
+            });
         } catch (error) {
             // Error is already handled in store
             console.error('Failed to delete product:', error);
@@ -2013,12 +2119,27 @@ const ProductsPage: React.FC = () => {
     };
 
     const handleToggleSale = async (product: Product) => {
+        // Сохраняем текущую страницу перед обновлением
+        const savedPage = currentPage;
+        
         const hasSaleTag = product.tags?.includes('sale');
         const newTags = hasSaleTag
         ? product.tags?.filter(t => t !== 'sale')
         : [...(product.tags || []), 'sale'];
         try {
             await updateProduct({ ...product, tags: newTags });
+            
+            // Восстанавливаем страницу после обновления
+            requestAnimationFrame(() => {
+                const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+                if (savedPage <= totalPages && totalPages > 0) {
+                    setCurrentPage(savedPage);
+                } else if (totalPages > 0) {
+                    setCurrentPage(totalPages);
+                } else {
+                    setCurrentPage(1);
+                }
+            });
         } catch (error) {
             console.error('Failed to update product:', error);
         }
@@ -2084,6 +2205,16 @@ const ProductsPage: React.FC = () => {
                     }`}
                 >
                     Limited Time Offers
+                </button>
+                <button
+                    onClick={() => setActiveTab('labels')}
+                    className={`px-6 py-3 font-black text-lg uppercase border-4 border-black shadow-[4px_4px_0_0_#000] transition-colors ${
+                        activeTab === 'labels'
+                            ? 'bg-[#FFD700] text-black'
+                            : 'bg-white text-black hover:bg-[#7CFF00] hover:text-black'
+                    }`}
+                >
+                    Labels & Filters
                 </button>
             </div>
 
@@ -2700,6 +2831,13 @@ const ProductsPage: React.FC = () => {
                     )}
                 </div>
             </section>
+            )}
+
+            {/* Labels & Filters */}
+            {activeTab === 'labels' && (
+                <section className="mb-8">
+                    <LabelsPage />
+                </section>
             )}
 
             {/* Offer Modal */}

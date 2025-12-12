@@ -662,7 +662,7 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
   },
   fetchProducts: async (forceRefresh: boolean = false) => {
     // #region agent log
-    fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:653',message:'fetchProducts called',data:{forceRefresh},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // Логирование отключено - сервис недоступен
     // #endregion
     set({ isLoading: true });
     // Load filter groups first
@@ -671,9 +671,13 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
     let products;
     try {
       products = await fetchProductsAPI(forceRefresh);
-      fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:657',message:'fetchProductsAPI success',data:{productCount:products.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #region agent log
+      // Логирование отключено
+      // #endregion
     } catch (error) {
-      fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:657',message:'fetchProductsAPI error',data:{error:error instanceof Error?error.toString():String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #region agent log
+      // Логирование отключено
+      // #endregion
       throw error;
     }
     // #endregion
@@ -714,7 +718,7 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
         };
         } catch (parseError) {
           // #region agent log
-          fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:702',message:'JSON parse error in localStorage',data:{error:parseError instanceof Error?parseError.toString():String(parseError)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+          // Agent log disabled - service unavailable
           // #endregion
           console.error('[useStore] Failed to parse localStorage auth data:', parseError);
           return; // Exit early if parsing fails
@@ -820,7 +824,7 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
     } catch (error) {
       console.error('[useStore] Failed to restore session from localStorage:', error);
       // #region agent log
-      fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:810',message:'localStorage restore error',data:{error:error instanceof Error?error.toString():String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+      // Agent log disabled - service unavailable
       // #endregion
     }
   },
@@ -1265,7 +1269,7 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
   closeSaleModal: () => set({ isSaleModalOpen: false }),
   register: async (email, password, firstName, lastName, avatar, phone, address) => {
     // #region agent log
-    fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:1248',message:'register called',data:{email},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // Agent log disabled - service unavailable
     // #endregion
     try {
       // Save user to database via API
@@ -1280,7 +1284,7 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
       if (!response.ok) {
         const error = await response.json();
         // #region agent log
-        fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:1259',message:'register API error',data:{status:response.status,error:error.message||'Registration failed'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // Agent log disabled - service unavailable
         // #endregion
         throw new Error(error.message || 'Registration failed');
       }
@@ -1322,7 +1326,7 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
       } catch (error) {
         console.error('[useStore] Failed to save registration data to localStorage:', error);
         // #region agent log
-        fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:1298',message:'localStorage save error',data:{error:error instanceof Error?error.toString():String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+        // Agent log disabled - service unavailable
         // #endregion
       }
       
@@ -1331,7 +1335,7 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
     } catch (error: any) {
       console.error('[useStore] Registration failed:', error);
       // #region agent log
-      fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useStore.ts:1304',message:'register catch error',data:{error:error?.message||String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // Agent log disabled - service unavailable
       // #endregion
       get().setToast(error.message || 'Registration failed');
       throw error;
@@ -2461,7 +2465,7 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
     
     // Save to API
     try {
-      await updateFilterGroup(groupId, { label: updatedGroup.label, items: updatedGroup.items });
+      await updateFilterGroup(groupId, { label: updatedGroup.label, items: updatedGroup.items, showIcons: updatedGroup.showIcons });
     } catch (error) {
       console.error('Failed to save filter item:', error);
       // Rollback on error
@@ -2582,7 +2586,7 @@ const useStore = create<StoreState & StoreActions>((set, get) => ({
     // Save to API
     try {
       // Save updated filter group
-      await updateFilterGroup(groupId, { label: updatedGroup.label, items: updatedGroup.items });
+      await updateFilterGroup(groupId, { label: updatedGroup.label, items: updatedGroup.items, showIcons: updatedGroup.showIcons });
       
       // Save updated products that were affected by the deletion
       const originalProductsMap = new Map(state.products.map(p => [p.id, p]));

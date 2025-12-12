@@ -30,23 +30,53 @@ export const setupFrontend = async (app: Express, __dirname: string): Promise<vo
       logger.debug('Attempting to setup Vite middleware...');
       const { createServer: createViteServer } = await import('vite');
       const vite = await createViteServer({
-        server: { middlewareMode: true },
-        appType: 'spa',
+        server: { 
+          middlewareMode: true,
+          hmr: {
+            port: undefined, // Use same port as Express server
+          }
+        },
+        appType: 'spa', // Keep 'spa' for client-side routing
         root: rootPath,
+        configFile: path.join(rootPath, 'vite.config.ts'),
+        optimizeDeps: {
+          include: [
+            'react',
+            'react-dom',
+            'react-i18next',
+            'lucide-react'
+          ],
+          esbuildOptions: {
+            target: 'es2022'
+          }
+        },
+        esbuild: {
+          target: 'es2022'
+        }
       });
       
       // Vite middleware should handle all non-API routes
       // It must be added after API routes but before error handler
+      // Use a wrapper to skip API routes while preserving Vite middleware functionality
       app.use((req: Request, res: Response, next) => {
         // Skip API routes - let them be handled by API routers
         if (req.path.startsWith('/api')) {
           return next();
         }
+        
+        // Log module requests for debugging
+        if (req.path.includes('.tsx') || req.path.includes('.ts') || req.path.includes('.jsx')) {
+          logger.debug(`Vite handling module request: ${req.path}`);
+        }
+        
         // Let Vite handle everything else
-        return vite.middlewares.handle(req, res, next);
+        // vite.middlewares is a Connect middleware, use it directly
+        vite.middlewares(req, res, next);
       });
       
       logger.success('Vite middleware configured successfully');
+      logger.debug('Vite server root:', rootPath);
+      logger.debug('Vite config file:', path.join(rootPath, 'vite.config.ts'));
     } catch (error: any) {
       logger.error('Failed to setup Vite middleware:', error.message);
       if (error.stack) {

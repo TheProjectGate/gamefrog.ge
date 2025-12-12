@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import useStore from '../store/useStore';
-import ProductRow from '../components/ProductRow';
+import ProductCard from '../components/ProductCard';
 import ProductSection from '../components/ProductSection';
 import { fetchActiveOffers, LimitedTimeOffer } from '../api/offers';
 
@@ -219,13 +219,14 @@ const SalePage: React.FC = () => {
                       data-product-id={product.id}
                       className={isHighlighted ? 'ring-4 ring-[#FFD700] ring-offset-4 bg-[#FFFC33] p-2 transition-all duration-500' : ''}
                     >
-                      <ProductRow
+                      <ProductCard
                         product={product}
                         onProductClick={openProductModal}
                         isInWishlist={wishlist.includes(product.id)}
                         onToggleWishlist={toggleWishlist}
                         genreConfig={genreConfig}
                         platformConfig={platformConfig}
+                        variant="row"
                       />
                     </div>
                   );
@@ -254,13 +255,14 @@ const SalePage: React.FC = () => {
                   data-product-id={product.id}
                   className={isHighlighted ? 'ring-4 ring-[#FFD700] ring-offset-4 bg-[#FFFC33] p-2 transition-all duration-500' : ''}
                 >
-                  <ProductRow
+                  <ProductCard
                     product={product}
                     onProductClick={openProductModal}
                     isInWishlist={wishlist.includes(product.id)}
                     onToggleWishlist={toggleWishlist}
                     genreConfig={genreConfig}
                     platformConfig={platformConfig}
+                    variant="row"
                   />
                 </div>
               );

@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { DashboardIcon, PackageIcon, SlidersIcon, MenuIcon, CloseIcon, MailIcon, AnalyticsIcon, CogIcon } from '../../components/Icons';
+import { DashboardIcon, PackageIcon, MenuIcon, CloseIcon, MailIcon, AnalyticsIcon, CogIcon } from '../../components/Icons';
 import useStore from '../../store/useStore';
 import DashboardPage from './DashboardPage';
 import ProductsPage from './ProductsPage';
-import LabelsPage from './LabelsPage';
 import MessagesPage from './MessagesPage';
 import AnalyticsPage from './AnalyticsPage';
 import SettingsPage from './SettingsPage';
 import ErrorBoundary from '../../components/ErrorBoundary';
 
-type AdminView = 'dashboard' | 'products' | 'labels' | 'messages' | 'analytics' | 'settings';
+type AdminView = 'dashboard' | 'products' | 'messages' | 'analytics' | 'settings';
 
 const AdminLayout: React.FC = () => {
   // Load activeView from localStorage or default to 'dashboard'
   const [activeView, setActiveView] = useState<AdminView>(() => {
     const saved = localStorage.getItem('adminActiveView');
-    return (saved && ['dashboard', 'products', 'labels', 'messages', 'analytics', 'settings'].includes(saved))
+    return (saved && ['dashboard', 'products', 'messages', 'analytics', 'settings'].includes(saved))
       ? (saved as AdminView)
       : 'dashboard';
   });
@@ -62,8 +61,6 @@ const AdminLayout: React.FC = () => {
         return <DashboardPage />;
       case 'products':
         return <ProductsPage />;
-      case 'labels':
-        return <LabelsPage />;
       case 'messages':
         return <MessagesPage />;
       case 'analytics':
@@ -100,15 +97,6 @@ const AdminLayout: React.FC = () => {
           >
             <PackageIcon className="w-6 h-6"/>
             Products
-          </button>
-          <button
-            onClick={() => setActiveView('labels')}
-            className={`w-full text-left flex items-center gap-3 p-3 font-black text-lg uppercase border-4 border-black shadow-[4px_4px_0_0_#000] transition-colors ${
-              activeView === 'labels' ? 'bg-[#FFD700] text-black' : 'bg-white text-black hover:bg-[#7CFF00] hover:text-black'
-            }`}
-          >
-            <SlidersIcon className="w-6 h-6"/>
-            Labels & Filters
           </button>
           <button
             onClick={() => setActiveView('messages')}
@@ -208,18 +196,6 @@ const AdminLayout: React.FC = () => {
                 >
                   <PackageIcon className="w-6 h-6"/>
                   Products
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveView('labels');
-                    setIsMenuOpen(false);
-                  }}
-                  className={`w-full text-left flex items-center gap-3 p-4 font-black text-lg uppercase border-4 border-black shadow-[4px_4px_0_0_#000] transition-colors ${
-                    activeView === 'labels' ? 'bg-[#FFD700] text-black' : 'bg-white text-black hover:bg-[#7CFF00] hover:text-black'
-                  }`}
-                >
-                  <SlidersIcon className="w-6 h-6"/>
-                  Labels & Filters
                 </button>
                 <button
                   onClick={() => {

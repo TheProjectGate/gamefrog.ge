@@ -9,19 +9,71 @@ import AppLoader from './components/AppLoader';
 import LimitedTimeOfferModal from './components/LimitedTimeOfferModal';
 import ChatAssistant from './components/ChatAssistant';
 import ErrorBoundary from './components/ErrorBoundary';
+import ErrorLogger from './components/ErrorLogger';
 import useStore from './store/useStore';
 import i18n from './i18n/config';
 import { fetchActiveOffer, LimitedTimeOffer } from './api/offers';
 
+// Helper function to make dynamic imports more robust
+// Retries the import if it fails (common issue with Vite dev server)
+const lazyLoad = (importFn: () => Promise<any>, retries = 3): React.LazyExoticComponent<any> => {
+  return lazy(async () => {
+    let lastError: Error | null = null;
+    
+    for (let i = 0; i < retries; i++) {
+      try {
+        const module = await importFn();
+        return module;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        console.warn(`Dynamic import failed (attempt ${i + 1}/${retries}):`, lastError.message);
+        
+        // Wait a bit before retrying (exponential backoff)
+        if (i < retries - 1) {
+          const delay = 100 * Math.pow(2, i);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    // If all retries failed, try one more time with a longer delay
+    // This handles cases where Vite server needs more time to initialize
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const module = await importFn();
+      console.log('Module loaded successfully after extended retry');
+      return module;
+    } catch (finalError) {
+      // If still failing, log detailed error info
+      console.error('Failed to load module after all retries:', lastError);
+      console.error('Final error:', finalError);
+      console.error('This might indicate a Vite dev server configuration issue.');
+      console.error('Try refreshing the page or restarting the dev server.');
+      
+      // In development, suggest a page reload as last resort
+      if (process.env.NODE_ENV === 'development') {
+        const reloadKey = 'vite-module-reload-attempted';
+        if (!sessionStorage.getItem(reloadKey)) {
+          sessionStorage.setItem(reloadKey, 'true');
+          console.warn('Attempting page reload to fix module loading...');
+          setTimeout(() => window.location.reload(), 2000);
+        }
+      }
+      
+      throw lastError || new Error('Failed to load module after retries');
+    }
+  });
+};
+
 // Lazy load pages for better performance
-const HomePage = lazy(() => import('./pages/HomePage'));
-const BrowsePage = lazy(() => import('./pages/BrowsePage'));
-const CartPage = lazy(() => import('./pages/CartPage'));
-const WishlistPage = lazy(() => import('./pages/WishlistPage'));
-const AdminLayout = lazy(() => import('./pages/Admin/AdminLayout'));
-const SalePage = lazy(() => import('./pages/SalePage'));
-const PaymentStatusPage = lazy(() => import('./pages/PaymentStatusPage'));
-const PaymentSimulationPage = lazy(() => import('./pages/PaymentSimulationPage'));
+const HomePage = lazyLoad(() => import('./pages/HomePage'));
+const BrowsePage = lazyLoad(() => import('./pages/BrowsePage'));
+const CartPage = lazyLoad(() => import('./pages/CartPage'));
+const WishlistPage = lazyLoad(() => import('./pages/WishlistPage'));
+const AdminLayout = lazyLoad(() => import('./pages/Admin/AdminLayout'));
+const SalePage = lazyLoad(() => import('./pages/SalePage'));
+const PaymentStatusPage = lazyLoad(() => import('./pages/PaymentStatusPage'));
+const PaymentSimulationPage = lazyLoad(() => import('./pages/PaymentSimulationPage'));
 
 const App: React.FC = () => {
   // Оптимизация: используем один селектор вместо множества
@@ -134,7 +186,7 @@ const App: React.FC = () => {
     
     const loadActiveOffer = async () => {
       // #region agent log
-      fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:135',message:'loadActiveOffer called',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // Agent log disabled - service unavailable
       // #endregion
       try {
         const offer = await fetchActiveOffer();
@@ -251,7 +303,7 @@ const App: React.FC = () => {
       } catch (error) {
         console.error('Failed to fetch active offer:', error);
         // #region agent log
-        fetch('http://localhost:7242/ingest/04afa4d2-4a28-4bcf-84e2-bdd38c7279ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:248',message:'loadActiveOffer error',data:{error:error instanceof Error?error.toString():String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // Agent log disabled - service unavailable
         // #endregion
       }
     };
@@ -492,6 +544,7 @@ const App: React.FC = () => {
     <ErrorBoundary>
       {content}
       {!isAdminView && <ChatAssistant greetingTrigger={chatGreetingTrigger} />}
+      <ErrorLogger />
     </ErrorBoundary>
   );
 };

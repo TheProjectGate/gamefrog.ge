@@ -29,6 +29,7 @@ export interface FilterConfigItem {
   symbol: string;
   iconName?: string; // Lucide icon component name (e.g., "Gamepad2")
   customSvg?: string; // Custom SVG icon data (base64 or SVG string)
+  showIcons?: boolean; // Whether to show icons for this specific filter item (default: true)
   children?: FilterConfig;
 }
 export type FilterConfig = { [key: string]: FilterConfigItem };
