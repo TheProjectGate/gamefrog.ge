@@ -130,7 +130,7 @@ const BrowsePage: React.FC = () => {
                 return (
                     <div
                         key={product.id}
-                        className={`w-full ${isBundle ? 'sm:col-span-2' : ''}`}
+                        className={`w-full ${isBundle ? 'col-span-2 sm:col-span-2' : ''}`}
                     >
                         <ProductCard
                             product={product}
@@ -145,6 +145,48 @@ const BrowsePage: React.FC = () => {
             })}
         </div>
     );
+
+    const renderProductList = (productsToRender: Product[]) => {
+        if (isMobileView) {
+            return (
+                <div className="grid grid-cols-1 gap-4">
+                    {productsToRender.map((product) => {
+                        const isBundle = (product.bundleItems?.length || 0) >= 2;
+                        return (
+                            <div key={product.id} className="w-full">
+                                <ProductCard
+                                    product={product}
+                                    isInWishlist={wishlist.includes(product.id)}
+                                    onToggleWishlist={toggleWishlist}
+                                    genreConfig={genreConfig}
+                                    platformConfig={platformConfig}
+                                    onProductClick={openProductModal}
+                                    variant="card"
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        } else {
+            return (
+                <div className="space-y-6">
+                    {productsToRender.map((product) => (
+                        <ProductCard
+                            key={product.id}
+                            product={product}
+                            onProductClick={openProductModal}
+                            isInWishlist={wishlist.includes(product.id)}
+                            onToggleWishlist={toggleWishlist}
+                            genreConfig={genreConfig}
+                            platformConfig={platformConfig}
+                            variant="row"
+                        />
+                    ))}
+                </div>
+            );
+        }
+    };
 
     const renderSearchResults = (productsToRender: Product[]) => {
         return productsToRender.length > 0 ? (
@@ -425,39 +467,23 @@ const BrowsePage: React.FC = () => {
                                   </div>
                                 )
                                 : renderEmptyState
-                          : (
-                              isMobileView ? (
-                                <div className="grid grid-cols-2 gap-4">
-                                  {filteredProducts.map(product => (
-                                    <ProductCard
-                                      key={product.id}
-                                      product={product}
-                                      isInWishlist={wishlist.includes(product.id)}
-                                      onToggleWishlist={toggleWishlist}
-                                      genreConfig={genreConfig}
-                                      platformConfig={platformConfig}
-                                      onProductClick={openProductModal}
-                                      variant="row"
-                                    />
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="space-y-6">
-                                  {filteredProducts.map(product => (
-                                    <ProductCard
-                                      key={product.id}
-                                      product={product}
-                                      onProductClick={openProductModal}
-                                      isInWishlist={wishlist.includes(product.id)}
-                                      onToggleWishlist={toggleWishlist}
-                                      genreConfig={genreConfig}
-                                      platformConfig={platformConfig}
-                                      variant="row"
-                                    />
-                                  ))}
-                                </div>
-                              )
-                            )
+                          : searchQuery
+                              ? renderProductList(filteredProducts)
+                              : categorizedProducts.length > 0
+                                ? (
+                                  <div className="space-y-12">
+                                    {categorizedProducts.map(category => (
+                                      <section key={category.id}>
+                                        <div className="flex items-baseline justify-between border-b-4 border-black pb-2 mb-4">
+                                          <h2 className="text-3xl font-display text-black uppercase">{category.title}</h2>
+                                          <span className="text-black/60 font-semibold text-sm">{category.products.length} items</span>
+                                        </div>
+                                        {renderProductList(category.products)}
+                                      </section>
+                                    ))}
+                                  </div>
+                                )
+                                : renderEmptyState
                     ) : (
                         renderEmptyState
                     )}

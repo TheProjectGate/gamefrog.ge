@@ -353,7 +353,7 @@ body {
   width: 400px;
   min-height: 500px;
   border: none;
-  background-image: url('./chat/animation_img/cratos.svg');
+  background-image: url('./chat/animation_img/cratos_chat_window.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -368,7 +368,7 @@ body {
   position: absolute;
   left: 20px;
   right: 0;
-  bottom: 13px;
+  bottom: 40px;
   display: flex;
   flex-direction: column;
   height: 80%;

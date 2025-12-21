@@ -39,6 +39,47 @@ export interface ChatContext {
   currentView?: string;
   timestamp: number;
   translate?: (key: string, options?: Record<string, unknown>) => string;
+  language?: string; // Язык интерфейса (например, 'en', 'ka', 'ru')
+  avatarSystemPrompt?: string; // System prompt из конфигурации аватара
+  // Расширенный контекст для ИИ
+  userEmail?: string;
+  userFirstName?: string;
+  userLastName?: string;
+  userPhone?: string;
+  userAddress?: string;
+  userAvatar?: number;
+  userRegistrationDate?: string;
+  purchaseHistory?: Array<{
+    id: number;
+    total: number;
+    createdAt: string;
+    products: Array<{ name: string; price: number }>;
+  }>;
+  previousQuestions?: string[]; // Список уже заданных вопросов, чтобы не повторять их
+  products?: Array<{
+    id: number;
+    name: string;
+    price: number;
+    discountPercent?: number;
+    tags?: string[];
+    genre?: string[];
+  }>;
+  activeOffers?: Array<{
+    id: number;
+    discountPercent: number;
+    endsAt: string;
+    productIds?: number[];
+  }>;
+  wishlist?: number[];
+}
+
+/**
+ * Предложенное действие в сообщении
+ */
+export interface PendingAction {
+  type: 'ADD_TO_CART' | 'ADD_TO_WISHLIST';
+  productId: number;
+  productName?: string;
 }
 
 /**
@@ -49,6 +90,7 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp?: number;
+  pendingActions?: PendingAction[]; // Предложенные действия, ожидающие подтверждения
 }
 
 /**

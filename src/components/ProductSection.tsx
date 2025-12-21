@@ -17,11 +17,19 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, products, onProd
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
+  const [isMobileView, setIsMobileView] = useState(false);
 
   const isDown = useRef(false);
   const startX = useRef(0);
   const scrollLeftStart = useRef(0);
   const didDrag = useRef(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobileView(window.matchMedia('(max-width: 768px)').matches);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const updateScrollState = useCallback(() => {
     const el = scrollContainerRef.current;
@@ -107,14 +115,17 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, products, onProd
       >
         {products.map((product) => {
           const isBundle = (product.bundleItems?.length || 0) >= 2;
+          // На мобильных бандлы всегда занимают всю ширину
           const bundleStyle = !itemsPerView && isBundle
             ? { flex: '2 1 0%', minWidth: '26rem' }
             : undefined;
-          const enforcedStyle = itemsPerView
+          const enforcedStyle = itemsPerView && !(isMobileView && isBundle)
             ? { flex: `0 0 ${100 / itemsPerView}%`, minWidth: `${100 / itemsPerView}%` }
+            : isMobileView && isBundle
+            ? { flex: '0 0 100%', minWidth: '100%' }
             : undefined;
           const cardStyle = enforcedStyle || bundleStyle;
-          const cardClassName = itemsPerView
+          const cardClassName = itemsPerView && !(isMobileView && isBundle)
             ? 'cursor-pointer flex-shrink-0'
             : `cursor-pointer ${isBundle ? 'flex-grow min-w-0' : 'flex-shrink-0 w-72'}`;
           return (

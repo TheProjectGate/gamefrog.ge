@@ -142,6 +142,8 @@
     "askAboutSales": "Ask about sales or games",
     "collapseChat": "Collapse chat",
     "openChat": "Open chat",
+    "addToCart": "Add to Cart",
+    "addToWishlist": "Add to Wishlist",
     "kratos": {
       "greeting": "You survived that Limited Time Offer? Hope you grabbed discounts, not just stress. What are we smashing next?",
       "responses": {
@@ -155,6 +157,113 @@
           "sale": "Head to the Sale section—discounts are stacked right now.",
           "bundle": "Need bundles? Say \"bundle\" and I'll highlight the weekly picks.",
           "wishlist": "Your wishlist is waiting for new trophies. Don't stall."
+        }
+      }
+    },
+    "bubbleComments": {
+      "kratos": {
+        "greetings": {
+          "withName1": "{{userName}}! How are you?",
+          "withName2": "Hey {{userName}}. What do you need?",
+          "withName3": "{{userName}}, the axe is ready."
+        },
+        "purchases": {
+          "recent1": "{{userName}}, how's {{productName}}? Did you finish it?",
+          "recent2": "Did you beat {{productName}} yet, {{userName}}?",
+          "recent3": "{{userName}}, how was {{productName}}?",
+          "random1": "How's {{productName}} going?",
+          "random2": "Finished {{productName}} yet?"
+        },
+        "general": [
+          "Not like my friend who took Medea from Colchis...",
+          "Want a game? Like when I took the Blades of Chaos.",
+          "The axe is warmed. What do you seek?",
+          "Boy, what brings you here?",
+          "Enough talk. What do you need?",
+          "Not as fierce as my battles, but deals are good.",
+          "Like when I faced the gods... but these are just games.",
+          "Sparta had no games like these.",
+          "Atreus would like these games.",
+          "The Leviathan Axe cuts prices, not enemies today.",
+          "{{userName}}, the gods of Olympus fear our deals.",
+          "Not as dangerous as my journey, but fun.",
+          "Like the Golden Fleece, but for games.",
+          "{{userName}}, ready for a new quest?",
+          "The Blades of Chaos... or a new game?",
+          "Even I need entertainment sometimes.",
+          "{{userName}}, what game calls to you?",
+          "Not like fighting Ares, but shopping is good."
+        ]
+      },
+      "other": {
+        "greetings": {
+          "withName1": "Hey {{userName}}! How are you?",
+          "withName2": "{{userName}}, ready to shop?",
+          "withName3": "Welcome back, {{userName}}!"
+        },
+        "purchases": {
+          "recent1": "How's {{productName}}?",
+          "recent2": "Finished {{productName}} yet?",
+          "recent3": "{{userName}}, did you beat {{productName}}?"
+        },
+        "general": [
+          "How are you doing, {{userName}}?",
+          "What do you need today?",
+          "Ready to add to your collection?",
+          "Time to expand your library?"
+        ]
+      },
+      "contextual": {
+        "viewingProduct": {
+          "withDiscount": "Great game {{productName}}! It's on sale with {{discount}}% off. Want me to add it to your wishlist?",
+          "noDiscount": "{{productName}} is a solid choice! Want me to add it to your wishlist? There might be a sale soon.",
+          "inWishlist": "You already have {{productName}} in your wishlist! Good taste, {{userName}}.",
+          "general": "{{productName}} looks interesting! Should I add it to your wishlist?"
+        },
+        "onHomePage": {
+          "withSales": "Check out the sales section - great deals waiting!",
+          "newReleases": "New releases just dropped! Want to see them?",
+          "general": "Welcome! Looking for something specific?"
+        },
+        "onBrowsePage": {
+          "filtered": "Found what you're looking for? I can help you find more!",
+          "general": "Browsing games? Tell me what you like!"
+        },
+        "onSalePage": {
+          "withProducts": "Great deals here! Want me to add any to your wishlist?",
+          "empty": "Sales are coming soon! Check back later."
+        },
+        "onWishlistPage": {
+          "withItems": "Nice wishlist! Want to add more?",
+          "empty": "Start building your wishlist! I can help you find great games."
+        },
+        "onCartPage": {
+          "withItems": "Ready to checkout? Or want to add more?",
+          "empty": "Your cart is empty. Let me help you find something!"
+        },
+        "recommendations": {
+          "byGenre": "I see you like {{genre}} games. Check out {{productName}}!",
+          "byPlatform": "You're into {{platform}}? {{productName}} might interest you!",
+          "similar": "Since you liked {{previousProduct}}, you might enjoy {{productName}}!",
+          "onSale": "{{productName}} is on sale! {{discount}}% off. Want it in your wishlist?",
+          "trending": "{{productName}} is trending! Want to check it out?"
+        },
+        "triggers": {
+          "welcome": {
+            "withName": "Welcome back, {{userName}}! Ready to find your next game?",
+            "withoutName": "Welcome! Looking for something specific?",
+            "kratosWithName": "{{userName}}! The axe is ready. What do you seek?",
+            "kratosWithoutName": "Warrior! The axe is ready. What do you seek?"
+          },
+          "longSearch": {
+            "general": "Can't find what you're looking for? I can help!",
+            "kratos": "Still searching? Even I need help sometimes. What are you looking for?"
+          },
+          "afterPurchase": {
+            "general": "How's {{productName}}? Did you finish it yet?",
+            "kratos": "{{userName}}, how was {{productName}}? Did you beat it?",
+            "multiple": "How are your recent games? {{productName}} still playing?"
+          }
         }
       }
     }

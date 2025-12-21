@@ -13,6 +13,11 @@ import homeSectionsRouter from '../routers/homeSections';
 import userSettingsRouter from '../routers/userSettings';
 import uploadRouter from '../routers/upload';
 import offersRouter from '../routers/offers';
+import geminiRouter from '../routers/gemini';
+import aiRouter from '../routers/aiRouter';
+import aiChatSettingsRouter from '../routers/aiChatSettings';
+import chatMessagesRouter from '../routers/chatMessages';
+import aiQuotaErrorsRouter from '../routers/aiQuotaErrors';
 
 /**
  * Setup all API routes
@@ -33,6 +38,13 @@ export const setupRoutes = (app: Express, port: number) => {
   app.use('/api/home-sections', homeSectionsRouter);
   app.use('/api/upload', uploadRouter);
   app.use('/api/offers', offersRouter);
+  // Новый универсальный роутер для всех AI провайдеров
+  app.use('/api/ai', aiRouter);
+  // Оставляем старый путь /api/gemini для обратной совместимости
+  app.use('/api/gemini', geminiRouter);
+  app.use('/api/ai-chat-settings', aiChatSettingsRouter);
+  app.use('/api/chat-messages', chatMessagesRouter);
+  app.use('/api/ai-quota-errors', aiQuotaErrorsRouter);
 
   // Health check
   app.get('/api/health', (req: Request, res: Response) => {

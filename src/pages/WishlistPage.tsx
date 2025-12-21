@@ -89,7 +89,7 @@ const WishlistPage: React.FC = () => {
                 <option value="price-desc">Price (High to Low)</option>
             </select>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
             {sortedWishlistProducts.map(product => {
             const isInCart = cart.some(item => item.id === product.id);
             const isBundle = (product.bundleItems?.length || 0) >= 2;
@@ -97,16 +97,18 @@ const WishlistPage: React.FC = () => {
             return (
                 <div 
                     key={product.id} 
-                    className={`relative group ${isBundle ? 'sm:col-span-2 lg:col-span-2 xl:col-span-2' : ''}`}
+                    className={`relative group flex flex-col h-full ${isBundle ? 'sm:col-span-2 lg:col-span-2 xl:col-span-2' : ''}`}
                 >
-                    <ProductCard
-                        product={product}
-                        isInWishlist={wishlist.includes(product.id)}
-                        onToggleWishlist={toggleWishlist}
-                        genreConfig={genreConfig}
-                        platformConfig={platformConfig}
-                        onProductClick={openProductModal}
-                    />
+                    <div className="flex-grow flex flex-col h-full">
+                        <ProductCard
+                            product={product}
+                            isInWishlist={wishlist.includes(product.id)}
+                            onToggleWishlist={toggleWishlist}
+                            genreConfig={genreConfig}
+                            platformConfig={platformConfig}
+                            onProductClick={openProductModal}
+                        />
+                    </div>
                     <div className="mt-2 border-t-2 border-dashed border-black/10 pt-2 flex flex-col gap-2">
                         <button 
                             onClick={() => !isInCart && addToCart(product)}

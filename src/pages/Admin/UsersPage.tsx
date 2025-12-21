@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { UserIcon, ChevronRightIcon } from '../../components/Icons';
+import React, { useState, useEffect, useMemo } from 'react';
+import { UserIcon, ChevronRightIcon, TrashIcon } from '../../components/Icons';
 import { getAvatar } from '../../utils/avatars';
+import { getAllChatMessages, getChatMessagesByUser, deleteChatMessages, ChatMessageWithUserInfo } from '../../api/chatMessages';
+import useStore from '../../store/useStore';
 
 interface UserStats {
   id: number;
@@ -50,6 +52,10 @@ const UsersPage: React.FC = () => {
   const [userDetails, setUserDetails] = useState<Record<string, UserDetails>>({});
   const [loadingDetails, setLoadingDetails] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [chatMessages, setChatMessages] = useState<Record<string, ChatMessageWithUserInfo[]>>({});
+  const [loadingChat, setLoadingChat] = useState<Record<string, boolean>>({});
+  const [chatFilter, setChatFilter] = useState<{ period?: 'week' | 'month' | 'year'; startDate?: string; endDate?: string }>({});
+  const products = useStore(state => state.products);
 
   useEffect(() => {
     fetchUsers();
@@ -101,6 +107,211 @@ const UsersPage: React.FC = () => {
         setLoadingDetails(null);
       }
     }
+
+    // Load chat history when expanding
+    if (!chatMessages[email]) {
+      loadChatHistory(email);
+    }
+  };
+
+  const loadChatHistory = async (email: string, filter?: { period?: 'week' | 'month' | 'year'; startDate?: string; endDate?: string }) => {
+    setLoadingChat(prev => ({ ...prev, [email]: true }));
+    try {
+      let messages: ChatMessageWithUserInfo[];
+      
+      if (filter?.period) {
+        const now = new Date();
+        let startDate: Date;
+        switch (filter.period) {
+          case 'week':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case 'month':
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case 'year':
+            startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+            break;
+        }
+        messages = await getChatMessagesByUser(email, startDate.toISOString().split('T')[0]);
+      } else if (filter?.startDate || filter?.endDate) {
+        messages = await getChatMessagesByUser(email, filter.startDate, filter.endDate);
+      } else {
+        messages = await getChatMessagesByUser(email);
+      }
+      
+      setChatMessages(prev => ({ ...prev, [email]: messages }));
+    } catch (error) {
+      console.error('Failed to load chat history:', error);
+    } finally {
+      setLoadingChat(prev => ({ ...prev, [email]: false }));
+    }
+  };
+
+  const handleDeleteChatMessages = async (email: string) => {
+    if (!confirm(`Delete all chat messages for ${email}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const filter = chatFilter.period 
+        ? { period: chatFilter.period, userEmail: email }
+        : { userEmail: email };
+      
+      await deleteChatMessages(filter);
+      
+      // Reload chat history
+      setChatMessages(prev => ({ ...prev, [email]: [] }));
+      loadChatHistory(email);
+      
+      alert('Chat messages deleted successfully');
+    } catch (error: any) {
+      console.error('Failed to delete chat messages:', error);
+      alert(`Failed to delete: ${error.message}`);
+    }
+  };
+
+  // Function to highlight important text
+  const highlightImportantText = (text: string, metadata?: any, userInfo?: any) => {
+    if (!text) return text;
+
+    let highlightedText = text;
+    const parts: Array<{ text: string; highlight: boolean; type?: string }> = [];
+    let lastIndex = 0;
+
+    // Collect all highlights
+    const highlights: Array<{ start: number; end: number; type: string; className: string }> = [];
+
+    // Highlight product mentions
+    if (metadata?.productMentions && products) {
+      metadata.productMentions.forEach((productName: string) => {
+        const product = products.find(p => p.name.toLowerCase() === productName.toLowerCase());
+        if (product) {
+          const regex = new RegExp(`\\b${productName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+          let match;
+          while ((match = regex.exec(highlightedText)) !== null) {
+            highlights.push({
+              start: match.index,
+              end: match.index + match[0].length,
+              type: 'product',
+              className: 'bg-yellow-300 font-bold px-1',
+            });
+          }
+        }
+      });
+    }
+
+    // Highlight user info mentions
+    if (metadata?.userInfoMentions && userInfo) {
+      if (metadata.userInfoMentions.includes('phone') && userInfo.phone) {
+        const regex = new RegExp(userInfo.phone.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        let match;
+        while ((match = regex.exec(highlightedText)) !== null) {
+          highlights.push({
+            start: match.index,
+            end: match.index + match[0].length,
+            type: 'phone',
+            className: 'bg-red-300 font-bold px-1',
+          });
+        }
+      }
+      if (metadata.userInfoMentions.includes('address') && userInfo.address) {
+        const regex = new RegExp(userInfo.address.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        let match;
+        while ((match = regex.exec(highlightedText)) !== null) {
+          highlights.push({
+            start: match.index,
+            end: match.index + match[0].length,
+            type: 'address',
+            className: 'bg-red-300 font-bold px-1',
+          });
+        }
+      }
+      if (metadata.userInfoMentions.includes('email') && userInfo.email) {
+        const regex = new RegExp(userInfo.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        let match;
+        while ((match = regex.exec(highlightedText)) !== null) {
+          highlights.push({
+            start: match.index,
+            end: match.index + match[0].length,
+            type: 'email',
+            className: 'bg-red-300 font-bold px-1',
+          });
+        }
+      }
+    }
+
+    // Highlight actions
+    if (metadata?.actions) {
+      metadata.actions.forEach((action: string) => {
+        if (action.includes('ADD_TO_CART')) {
+          const regex = /(add to cart|добавить в корзину)/gi;
+          let match;
+          while ((match = regex.exec(highlightedText)) !== null) {
+            highlights.push({
+              start: match.index,
+              end: match.index + match[0].length,
+              type: 'action',
+              className: 'bg-green-300 font-bold px-1',
+            });
+          }
+        }
+        if (action.includes('ADD_TO_WISHLIST')) {
+          const regex = /(add to wishlist|добавить в вишлист)/gi;
+          let match;
+          while ((match = regex.exec(highlightedText)) !== null) {
+            highlights.push({
+              start: match.index,
+              end: match.index + match[0].length,
+              type: 'action',
+              className: 'bg-pink-300 font-bold px-1',
+            });
+          }
+        }
+      });
+    }
+
+    // Sort highlights by start position
+    highlights.sort((a, b) => a.start - b.start);
+
+    // Remove overlapping highlights (keep the first one)
+    const nonOverlapping: typeof highlights = [];
+    for (let i = 0; i < highlights.length; i++) {
+      if (i === 0 || highlights[i].start >= nonOverlapping[nonOverlapping.length - 1].end) {
+        nonOverlapping.push(highlights[i]);
+      }
+    }
+
+    // Build JSX with highlights
+    const elements: React.ReactNode[] = [];
+    let currentIndex = 0;
+
+    nonOverlapping.forEach((highlight, idx) => {
+      // Add text before highlight
+      if (highlight.start > currentIndex) {
+        elements.push(
+          <span key={`text-${idx}`}>{highlightedText.substring(currentIndex, highlight.start)}</span>
+        );
+      }
+
+      // Add highlighted text
+      elements.push(
+        <span key={`highlight-${idx}`} className={highlight.className} title={highlight.type}>
+          {highlightedText.substring(highlight.start, highlight.end)}
+        </span>
+      );
+
+      currentIndex = highlight.end;
+    });
+
+    // Add remaining text
+    if (currentIndex < highlightedText.length) {
+      elements.push(
+        <span key="text-end">{highlightedText.substring(currentIndex)}</span>
+      );
+    }
+
+    return elements.length > 0 ? <>{elements}</> : text;
   };
 
   const filteredUsers = users.filter(user =>
@@ -304,6 +515,79 @@ const UsersPage: React.FC = () => {
                               </div>
                             </div>
                           )}
+
+                          {/* Chat History */}
+                          <div className="border-2 border-black bg-white">
+                            <div className="flex justify-between items-center p-3 border-b-2 border-black bg-[#FFD700]">
+                              <p className="font-bold text-sm">Chat History</p>
+                              <div className="flex gap-2">
+                                <select
+                                  value={chatFilter.period || ''}
+                                  onChange={(e) => {
+                                    const period = e.target.value as 'week' | 'month' | 'year' | '';
+                                    setChatFilter({ period: period || undefined });
+                                    if (period) {
+                                      loadChatHistory(user.email, { period });
+                                    }
+                                  }}
+                                  className="text-xs border border-black px-2 py-1 bg-white"
+                                >
+                                  <option value="">All Time</option>
+                                  <option value="week">Last Week</option>
+                                  <option value="month">Last Month</option>
+                                  <option value="year">Last Year</option>
+                                </select>
+                                <button
+                                  onClick={() => handleDeleteChatMessages(user.email)}
+                                  className="text-xs border border-black px-2 py-1 bg-red-500 text-white hover:bg-red-600"
+                                  title="Delete chat messages"
+                                >
+                                  <TrashIcon className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                            {loadingChat[user.email] ? (
+                              <p className="p-3 text-center text-xs text-gray-500">Loading chat...</p>
+                            ) : chatMessages[user.email] && chatMessages[user.email].length > 0 ? (
+                              <div className="max-h-96 overflow-y-auto p-3 space-y-2">
+                                {chatMessages[user.email].map((msg) => (
+                                  <div
+                                    key={msg.id}
+                                    className={`border-2 border-black p-2 text-xs ${
+                                      msg.role === 'user' ? 'bg-blue-50' : 'bg-gray-50'
+                                    }`}
+                                  >
+                                    <div className="flex justify-between items-start mb-1">
+                                      <span className="font-bold text-[10px] uppercase">
+                                        {msg.role === 'user' ? '👤 User' : '🤖 Assistant'}
+                                      </span>
+                                      <span className="text-[10px] text-gray-500">
+                                        {new Date(msg.created_at).toLocaleString()}
+                                      </span>
+                                    </div>
+                                    <div className="text-sm">
+                                      {highlightImportantText(msg.content, msg.metadata, details.user)}
+                                    </div>
+                                    {msg.pending_actions && msg.pending_actions.length > 0 && (
+                                      <div className="mt-2 pt-2 border-t border-black">
+                                        <p className="text-[10px] font-bold mb-1">Actions:</p>
+                                        {msg.pending_actions.map((action, idx) => (
+                                          <span
+                                            key={idx}
+                                            className="inline-block mr-1 mb-1 px-2 py-0.5 bg-[#FFD700] border border-black text-[10px] font-bold"
+                                          >
+                                            {action.type === 'ADD_TO_CART' ? '🛒 Add to Cart' : '❤️ Add to Wishlist'}: {action.productName}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="p-3 text-center text-xs text-gray-500">No chat history</p>
+                            )}
+                          </div>
                         </>
                       ) : (
                         <p className="text-center text-gray-500">Failed to load details</p>

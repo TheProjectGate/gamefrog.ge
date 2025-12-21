@@ -1,22 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <!-- Creator: CorelDRAW -->
-<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="2.4041cm" height="2.96555cm" version="1.1" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd"
-viewBox="0 0 368 454"
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="2.41932cm" height="2.65766cm" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 373 409"
  xmlns:xlink="http://www.w3.org/1999/xlink"
  xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
  <defs>
+  <style type="text/css">
+   <![CDATA[
+    .fil1 {fill:#282829}
+    .fil0 {fill:black}
+   ]]>
+  </style>
    <clipPath id="id0">
-    <path d="M241 69l-225 -17 -7 363 10 1 -11 12 -1 15 356 2 0 -262 -11 -2 11 -14 0 -81 -80 -20 0 -54 -43 57z"/>
+    <path d="M242 22l-226 -17 -7 365 10 1 -11 12 -1 15 358 2 0 -264 -12 -3 12 -15 5 -115 -86 13 -18 -7 -24 10z"/>
    </clipPath>
  </defs>
  <g id="Layer_x0020_1">
   <metadata id="CorelCorpID_0Corel-Layer"/>
-  <path fill="black" d="M211 101c105,-6 85,-2 87,88l70 261 -368 4 2 -28 7 -6 -8 0 8 -372 201 54z"/>
-  <polygon fill="black" points="240,65 288,0 288,63 368,83 368,168 359,179 368,181 368,450 4,447 5,426 12,419 6,418 13,48 "/>
-  <polygon fill="gold" points="241,69 17,52 10,415 20,416 9,428 8,443 364,446 364,184 353,181 364,167 364,86 284,66 284,12 "/>
-  <g clip-path="url(#id0)">
-   <image x="-162" y="-8" width="704" height="469" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA8oAAAKGCAYAAAHlhVIBAAAACXBIWXMA
+  <path class="fil0" d="M212 54c106,-6 86,-2 88,88l70 263 -370 4 2 -28 7 -7 -8 0 9 -374 202 54z"/>
+  <polygon class="fil1" points="241,18 267,7 286,13 373,4 370,122 362,133 370,134 370,405 4,402 5,382 12,374 6,374 13,1 "/>
+  <g style="clip-path:url(#id0)">
+   <image x="-164" y="-55" width="708" height="472" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA8oAAAKGCAYAAAHlhVIBAAAACXBIWXMA
 AA7CAAAOwgEVKEqAAAAgAElEQVR4nJS9Z5ccV5IlaK49RGYCIABqrUWxqrpnztmzn/a377ed2e4S
 LBIESGgQglCpQrjee83seXgA7Nnd6GYlMjLC/fkzdU2+tPnxr8MgnVQ3Uik2gwypSDSISMz/2b26
 hUjxQSJ9dorP9LK9dqif79JIUsFne5Hhs1rkRi5VGUnWD9J3kdSzSObnvWSfbaV5UEjfRxLj2rxH
